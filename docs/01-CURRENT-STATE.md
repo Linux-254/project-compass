@@ -1,5 +1,11 @@
 # Current State — ReForge / Project Compass
 
+> **Status: v1 · SUPERSEDED.** This document describes the **pre-implementation
+> baseline** (prototype handover). All items in its "Gaps vs the ask list"
+> below have since been completed in the 11-phase build. For the completed
+> state, see `README.md` and `docs/03-HANDOFF.md`. The engineering guide
+> (`docs/00-ENGINEERING-GUIDE.md`) remains the master spec.
+
 > Status: v1 · Written at handover from the prototype phase. Companion doc:
 > `docs/00-ENGINEERING-GUIDE.md` (the master engineering guide preserved from the
 > Lovable prototype) and `docs/02-MIGRATION-STRATEGY.md`.
@@ -14,14 +20,14 @@ project `ab37fc5a-e3b7-4494-b252-9f7bcf945ded`.
 
 What it contains:
 
-| Area | Files | Notes |
-|---|---|---|
-| Marketing pages | `src/routes/{index,how-it-works,dimensions,daily-practice,stories,start}.tsx` | Static, client-only, no backend |
-| Site components | `src/components/site/*` | nav, footer, hero, CTA band, reveal |
-| Content | `src/lib/reforge-content.ts` | partners, 4 phases, 5 life-area groups, stories, daily beats |
-| Brand assets | `src/assets/*.jpg` | hero and journal imagery |
-| Engineering guide | `docs/00-ENGINEERING-GUIDE.md` | role charter, ADRs, non-negotiables, 24-week plan, two-track rule |
-| Lovable config | `.lovable/plan.md`, `.lovable/project.json` | template `tanstack_start_ts_current` |
+| Area              | Files                                                                         | Notes                                                             |
+| ----------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Marketing pages   | `src/routes/{index,how-it-works,dimensions,daily-practice,stories,start}.tsx` | Static, client-only, no backend                                   |
+| Site components   | `src/components/site/*`                                                       | nav, footer, hero, CTA band, reveal                               |
+| Content           | `src/lib/reforge-content.ts`                                                  | partners, 4 phases, 5 life-area groups, stories, daily beats      |
+| Brand assets      | `src/assets/*.jpg`                                                            | hero and journal imagery                                          |
+| Engineering guide | `docs/00-ENGINEERING-GUIDE.md`                                                | role charter, ADRs, non-negotiables, 24-week plan, two-track rule |
+| Lovable config    | `.lovable/plan.md`, `.lovable/project.json`                                   | template `tanstack_start_ts_current`                              |
 
 **Value:** warm brand voice, page copy, and the engineering guide that defines
 the standards this implementation follows. **Limitation:** no auth, no database,
@@ -37,8 +43,9 @@ Stack:
 - **Frontend:** React 19, Vite, Tailwind CSS v4, shadcn/ui (Radix), wouter,
   TanStack Query, tRPC React client, recharts.
 - **Backend:** Express, tRPC 11 (superjson), Drizzle ORM, JWT sessions (jose).
-- **Database:** Drizzle schema + generated migration (originally MySQL, being
-  migrated to **PostgreSQL / Supabase** — see `docs/02-MIGRATION-STRATEGY.md`).
+- **Database:** Drizzle schema + generated Postgres migration
+  (`drizzle/0000_round_ted_forrester.sql`) for **PostgreSQL / Supabase**.
+  The original MySQL migration was removed during Phase 1.
 - **Auth:** Manus OAuth portal login with `__Host-` CSRF state cookie, one-year
   signed session cookie, `Bearer` fallback for Safari/WebView.
 
@@ -98,20 +105,20 @@ Stack:
 
 ## 3. Gaps vs. the ask list
 
-| Ask | Status in code | Work remaining |
-|---|---|---|
-| Analyze repo + Lovable config, document state, migration plan | **This doc set** | — |
-| DB schema & migrations for 21 dimensions | Schema + MySQL migration exist | Migrate to Postgres/Supabase, regenerate migration, seed content |
-| Public marketing site (warm, non-clinical) | Single landing page only | About, How-It-Works, Dimensions, Daily Practice, Success, FAQ, Supporters, Contact + newsletter capture + shared site layout |
-| Auth, RBAC, security | OAuth + JWT + `protectedProcedure`/`adminProcedure` | Role-gated procedures (supporter/mentor/moderator), rate limiting, CORS, helmet, ownership checks, Tier-1 encryption |
-| Conversational onboarding (21 dims) | Backend procedures exist | Substance selection → conversational UI → profile setup → scoring → completion |
-| App dashboard + progress tracking | Dashboard overview page | Progress/dimension charts, dimension detail, sidebar navigation to all features |
-| Check-ins, journal, rules & boundaries | Check-in page + backend | History, streaks/milestones, journal UI, rules CRUD + review |
-| Goal tracker, activity guides, content library | Backend only | Goal UI + steps, guide recommendation, resource library |
-| Music rehabilitation + devotional space | Backend only | Music profile/playlists UI, devotional (faith + secular) |
-| Newsletter system | Subscribe/unsubscribe backend | Double opt-in, preferences, archive, admin issue creation |
-| Branch workflow + push | No git repo yet | `feature → dev → staging → main`, push to GitHub |
-| Final summary + hand-off docs | — | README, `docs/03-HANDOFF.md` |
+| Ask                                                           | Status in code                                      | Work remaining                                                                                                               |
+| ------------------------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Analyze repo + Lovable config, document state, migration plan | **This doc set**                                    | —                                                                                                                            |
+| DB schema & migrations for 21 dimensions                      | Schema + MySQL migration exist                      | Migrate to Postgres/Supabase, regenerate migration, seed content                                                             |
+| Public marketing site (warm, non-clinical)                    | Single landing page only                            | About, How-It-Works, Dimensions, Daily Practice, Success, FAQ, Supporters, Contact + newsletter capture + shared site layout |
+| Auth, RBAC, security                                          | OAuth + JWT + `protectedProcedure`/`adminProcedure` | Role-gated procedures (supporter/mentor/moderator), rate limiting, CORS, helmet, ownership checks, Tier-1 encryption         |
+| Conversational onboarding (21 dims)                           | Backend procedures exist                            | Substance selection → conversational UI → profile setup → scoring → completion                                               |
+| App dashboard + progress tracking                             | Dashboard overview page                             | Progress/dimension charts, dimension detail, sidebar navigation to all features                                              |
+| Check-ins, journal, rules & boundaries                        | Check-in page + backend                             | History, streaks/milestones, journal UI, rules CRUD + review                                                                 |
+| Goal tracker, activity guides, content library                | Backend only                                        | Goal UI + steps, guide recommendation, resource library                                                                      |
+| Music rehabilitation + devotional space                       | Backend only                                        | Music profile/playlists UI, devotional (faith + secular)                                                                     |
+| Newsletter system                                             | Subscribe/unsubscribe backend                       | Double opt-in, preferences, archive, admin issue creation                                                                    |
+| Branch workflow + push                                        | No git repo yet                                     | `feature → dev → staging → main`, push to GitHub                                                                             |
+| Final summary + hand-off docs                                 | —                                                   | README, `docs/03-HANDOFF.md`                                                                                                 |
 
 ## 4. Notable defects / cleanups found
 
