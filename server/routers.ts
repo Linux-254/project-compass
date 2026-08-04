@@ -346,6 +346,10 @@ export const appRouter = router({
       return db.getActiveGoals(ctx.user.id);
     }),
 
+    all: protectedProcedure.query(async ({ ctx }) => {
+      return db.getGoals(ctx.user.id);
+    }),
+
     addStep: protectedProcedure
       .input(
         z.object({
@@ -355,6 +359,38 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         await db.addGoalStep(ctx.user.id, input.goalId, input.title);
+        return { success: true };
+      }),
+
+    steps: protectedProcedure
+      .input(z.object({ goalId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getGoalSteps(ctx.user.id, input.goalId);
+      }),
+
+    toggleStep: protectedProcedure
+      .input(z.object({ goalId: z.number(), stepId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.toggleGoalStep(ctx.user.id, input.goalId, input.stepId);
+        return { success: true };
+      }),
+
+    updateStatus: protectedProcedure
+      .input(
+        z.object({
+          goalId: z.number(),
+          status: z.enum(["active", "completed", "abandoned"]),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.updateGoalStatus(ctx.user.id, input.goalId, input.status);
+        return { success: true };
+      }),
+
+    remove: protectedProcedure
+      .input(z.object({ goalId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteGoal(ctx.user.id, input.goalId);
         return { success: true };
       }),
   }),
@@ -428,6 +464,28 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         return db.updateMusicProfile(ctx.user.id, input);
       }),
+
+    createPlaylist: protectedProcedure
+      .input(
+        z.object({
+          title: z.string().min(1),
+          context: z.string().optional(),
+          tracks: z.array(z.any()).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.createPlaylist(
+          ctx.user.id,
+          input.title,
+          input.context,
+          input.tracks
+        );
+        return { success: true };
+      }),
+
+    getPlaylists: protectedProcedure.query(async ({ ctx }) => {
+      return db.getPlaylists(ctx.user.id);
+    }),
   }),
 
   // ============================================================================
@@ -470,6 +528,34 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         return db.getResourcesByDimension(input.dimensionId, input.type);
       }),
+
+    getByType: publicProcedure
+      .input(
+        z.object({
+          type: z.string(),
+          limit: z.number().default(20),
+        })
+      )
+      .query(async ({ input }) => {
+        return db.getResourcesByType(input.type, input.limit);
+      }),
+
+    getById: publicProcedure
+      .input(z.object({ resourceId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getResourceById(input.resourceId);
+      }),
+  }),
+
+  devotional: router({
+    today: protectedProcedure.query(async ({ ctx }) => {
+      const devotionals = await db.getResourcesByType("devotional");
+      if (devotionals.length === 0) return undefined;
+
+      const day = Math.floor(Date.now() / 86_400_000);
+      const index = day % devotionals.length;
+      return devotionals[index];
+    }),
   }),
 
   // ============================================================================

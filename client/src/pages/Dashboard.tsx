@@ -22,6 +22,7 @@ import {
   Smile,
   Flame,
   Shield,
+  HeartHandshake,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -322,6 +323,19 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-slate-600">Personalized resources</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation("/devotional")}
+          >
+            <CardHeader>
+              <HeartHandshake className="h-8 w-8 text-amber-600 mb-2" />
+              <CardTitle className="text-base">Devotional</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600">A moment to ground</p>
             </CardContent>
           </Card>
         </div>

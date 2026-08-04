@@ -18,6 +18,10 @@ import Progress from "@/pages/Progress";
 import CheckInHistory from "@/pages/CheckInHistory";
 import Journal from "@/pages/Journal";
 import Rules from "@/pages/Rules";
+import Goals from "@/pages/Goals";
+import Guides from "@/pages/Guides";
+import Music from "@/pages/Music";
+import Devotional from "@/pages/Devotional";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -41,6 +45,10 @@ function Router() {
       <Route path={"/check-ins"} component={CheckInHistory} />
       <Route path={"/journal"} component={Journal} />
       <Route path={"/rules"} component={Rules} />
+      <Route path={"/goals"} component={Goals} />
+      <Route path={"/guides"} component={Guides} />
+      <Route path={"/music"} component={Music} />
+      <Route path={"/devotional"} component={Devotional} />
       <Route path={"/onboarding"} component={Onboarding} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
