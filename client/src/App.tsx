@@ -25,9 +25,26 @@ import Devotional from "@/pages/Devotional";
 import Newsletter from "@/pages/Newsletter";
 import Settings from "@/pages/Settings";
 import Admin from "@/pages/Admin";
+import Auth from "@/pages/Auth";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import RequireAuth from "./components/RequireAuth";
 import { ThemeProvider } from "./contexts/ThemeContext";
+
+const protectedRoutes = [
+  { path: "/dashboard", component: Dashboard },
+  { path: "/progress", component: Progress },
+  { path: "/check-ins", component: CheckInHistory },
+  { path: "/journal", component: Journal },
+  { path: "/rules", component: Rules },
+  { path: "/goals", component: Goals },
+  { path: "/guides", component: Guides },
+  { path: "/music", component: Music },
+  { path: "/devotional", component: Devotional },
+  { path: "/settings", component: Settings },
+  { path: "/admin", component: Admin },
+  { path: "/onboarding", component: Onboarding },
+];
 
 function Router() {
   return (
@@ -43,25 +60,22 @@ function Router() {
       <Route path={"/contact"} component={Contact} />
       <Route path={"/privacy"} component={Privacy} />
       <Route path={"/terms"} component={Terms} />
-      <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/progress"} component={Progress} />
-      <Route path={"/check-ins"} component={CheckInHistory} />
-      <Route path={"/journal"} component={Journal} />
-      <Route path={"/rules"} component={Rules} />
-      <Route path={"/goals"} component={Goals} />
-      <Route path={"/guides"} component={Guides} />
-      <Route path={"/music"} component={Music} />
-      <Route path={"/devotional"} component={Devotional} />
+      <Route path={"/auth"} component={Auth} />
       <Route path={"/newsletter"} component={Newsletter} />
-      <Route path={"/settings"} component={Settings} />
-      <Route path={"/admin"} component={Admin} />
-      <Route path={"/onboarding"} component={Onboarding} />
+      {protectedRoutes.map(({ path, component: Component }) => (
+        <Route key={path} path={path}>
+          <RequireAuth>
+            <Component />
+          </RequireAuth>
+        </Route>
+      ))}
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
   );
 }
+
 
 function App() {
   return (
