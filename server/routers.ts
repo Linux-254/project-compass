@@ -110,6 +110,36 @@ export const appRouter = router({
     getDimensions: publicProcedure.query(async ({ ctx }) => {
       return db.getLifeDimensions();
     }),
+
+    saveScore: protectedProcedure
+      .input(
+        z.object({
+          dimensionId: z.number(),
+          score: z.number().min(0).max(100),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.saveDimensionScore(
+          ctx.user.id,
+          input.dimensionId,
+          input.score,
+          new Date()
+        );
+        return { success: true };
+      }),
+
+    status: protectedProcedure.query(async ({ ctx }) => {
+      const [profile, substanceFocus] = await Promise.all([
+        db.getOrCreateProfile(ctx.user.id),
+        db.getSubstanceFocus(ctx.user.id),
+      ]);
+      const hasSubstance = Boolean(substanceFocus);
+      return {
+        assessmentStarted: Boolean(substanceFocus),
+        profileComplete: Boolean(profile?.displayName),
+        needsOnboarding: !hasSubstance || !profile?.displayName,
+      };
+    }),
   }),
 
   // ============================================================================

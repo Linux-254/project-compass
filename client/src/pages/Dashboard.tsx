@@ -1,25 +1,49 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { Heart, TrendingUp, Target, BookOpen, Music, Users, Settings, LogOut } from "lucide-react";
+import {
+  Heart,
+  TrendingUp,
+  Target,
+  BookOpen,
+  Music,
+  Users,
+  Settings,
+  LogOut,
+} from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function Dashboard() {
-  const { user, logout } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/" });
+  const { user, logout } = useAuth({
+    redirectOnUnauthenticated: true,
+    redirectPath: "/",
+  });
   const [, setLocation] = useLocation();
 
   const dashboardQuery = trpc.dashboard.getOverview.useQuery();
+  const onboardingStatusQuery = trpc.onboarding.status.useQuery(undefined, {
+    retry: false,
+  });
   const { data: overview, isLoading } = dashboardQuery;
+  const needsOnboarding = onboardingStatusQuery.data?.needsOnboarding;
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50">
         <nav className="bg-white border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="text-2xl font-bold">Re<span className="text-amber-600">Forge</span></div>
+            <div className="text-2xl font-bold">
+              Re<span className="text-amber-600">Forge</span>
+            </div>
             <Skeleton className="h-10 w-20" />
           </div>
         </nav>
@@ -44,7 +68,9 @@ export default function Dashboard() {
             Re<span className="text-amber-600">Forge</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-600">{user?.name || user?.email}</span>
+            <span className="text-sm text-slate-600">
+              {user?.name || user?.email}
+            </span>
             <Button
               variant="ghost"
               size="sm"
@@ -69,11 +95,30 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {needsOnboarding && (
+          <div className="mb-8 rounded-2xl bg-amber-50 border border-amber-200 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="font-semibold text-amber-900">
+                Let's build your map
+              </h2>
+              <p className="text-sm text-amber-800">
+                A ten-minute conversation creates your starting scores across
+                the 21 dimensions. You can finish it later.
+              </p>
+            </div>
+            <Button onClick={() => setLocation("/onboarding")}>
+              Start onboarding
+            </Button>
+          </div>
+        )}
+
         {/* Welcome & Streak */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card className="md:col-span-2">
             <CardHeader>
-              <CardTitle>Welcome back, {overview?.profile?.displayName || "Friend"}!</CardTitle>
+              <CardTitle>
+                Welcome back, {overview?.profile?.displayName || "Friend"}!
+              </CardTitle>
               <CardDescription>
                 You're on day {overview?.streak?.current || 0} of your journey
               </CardDescription>
@@ -87,7 +132,10 @@ export default function Dashboard() {
                       {overview?.streak?.current || 0} days
                     </span>
                   </div>
-                  <Progress value={(overview?.streak?.current || 0) * 5} className="h-2" />
+                  <Progress
+                    value={(overview?.streak?.current || 0) * 5}
+                    className="h-2"
+                  />
                 </div>
                 <div>
                   <div className="flex justify-between mb-2">
@@ -96,7 +144,10 @@ export default function Dashboard() {
                       {overview?.streak?.longest || 0} days
                     </span>
                   </div>
-                  <Progress value={(overview?.streak?.longest || 0) * 5} className="h-2" />
+                  <Progress
+                    value={(overview?.streak?.longest || 0) * 5}
+                    className="h-2"
+                  />
                 </div>
               </div>
             </CardContent>
@@ -152,11 +203,15 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4">
-              {overview?.dimensionScores?.slice(0, 6).map((dim) => (
+              {overview?.dimensionScores?.slice(0, 6).map(dim => (
                 <div key={dim.dimensionId} className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm font-medium">{dim.dimensionLabel}</span>
-                    <span className="text-sm font-bold text-amber-600">{dim.score}%</span>
+                    <span className="text-sm font-medium">
+                      {dim.dimensionLabel}
+                    </span>
+                    <span className="text-sm font-bold text-amber-600">
+                      {dim.score}%
+                    </span>
                   </div>
                   <Progress value={dim.score} className="h-2" />
                 </div>
@@ -237,11 +292,16 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {overview.activeGoals.map((goal) => (
-                  <div key={goal.id} className="flex items-start gap-4 p-4 bg-slate-50 rounded-lg">
+                {overview.activeGoals.map(goal => (
+                  <div
+                    key={goal.id}
+                    className="flex items-start gap-4 p-4 bg-slate-50 rounded-lg"
+                  >
                     <div className="flex-1">
                       <h4 className="font-medium">{goal.title}</h4>
-                      <p className="text-sm text-slate-600">{goal.horizon}-day goal</p>
+                      <p className="text-sm text-slate-600">
+                        {goal.horizon}-day goal
+                      </p>
                     </div>
                     <Button variant="outline" size="sm">
                       View
