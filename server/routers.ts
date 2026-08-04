@@ -15,6 +15,7 @@ export const appRouter = router({
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    getRoles: protectedProcedure.query(({ ctx }) => ctx.userRoles),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -509,6 +510,74 @@ export const appRouter = router({
       .input(z.object({ email: z.string().email() }))
       .mutation(async ({ ctx, input }) => {
         await db.unsubscribeFromNewsletter(input.email);
+        return { success: true };
+      }),
+
+    getStatus: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user.email) return undefined;
+      const sub = await db.getSubscriptionByEmail(ctx.user.email);
+      if (sub) return sub;
+      return { email: ctx.user.email, status: "unsubscribed", preferences: {} };
+    }),
+
+    updatePreferences: protectedProcedure
+      .input(
+        z.object({
+          preferences: z.record(z.string(), z.unknown()),
+          subscribe: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user.email) return { success: false };
+        if (input.subscribe === true) {
+          await db.subscribeToNewsletter(
+            ctx.user.email,
+            ctx.user.id,
+            "account"
+          );
+        } else if (input.subscribe === false) {
+          await db.unsubscribeFromNewsletter(ctx.user.email);
+        }
+        await db.updateSubscriptionPreferences(
+          ctx.user.email,
+          input.preferences
+        );
+        return { success: true };
+      }),
+
+    getIssues: protectedProcedure
+      .input(
+        z.object({
+          limit: z.number().default(20),
+          offset: z.number().default(0),
+        })
+      )
+      .query(async ({ input }) => {
+        return db.listNewsletterIssues(input.limit, input.offset);
+      }),
+
+    createIssue: adminProcedure
+      .input(
+        z.object({
+          type: z.enum([
+            "daily",
+            "weekly",
+            "milestone",
+            "dimension",
+            "situation",
+          ]),
+          subject: z.string().min(1),
+          body: z.string().min(1),
+          scheduledFor: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await db.createNewsletterIssue(
+          input.type,
+          input.subject,
+          input.body,
+          input.scheduledFor ? new Date(input.scheduledFor) : undefined
+        );
         return { success: true };
       }),
   }),

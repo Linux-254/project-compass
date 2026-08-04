@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { users, userRoles, InsertUser } from "../../drizzle/schema";
 import { ENV } from "../_core/env";
 import { getDb } from "./client";
@@ -101,7 +101,7 @@ export async function listUsers(limit = 50, offset = 0) {
   const db = await getDb();
   if (!db) return [];
 
-  return db
+  const rows = await db
     .select({
       id: users.id,
       openId: users.openId,
@@ -114,6 +114,26 @@ export async function listUsers(limit = 50, offset = 0) {
     .from(users)
     .limit(limit)
     .offset(offset);
+
+  const ids = rows.map(r => r.id);
+  if (ids.length === 0) return [];
+
+  const roleRows = await db
+    .select({ userId: userRoles.userId, role: userRoles.role })
+    .from(userRoles)
+    .where(inArray(userRoles.userId, ids));
+
+  const rolesByUser = new Map<number, string[]>();
+  for (const row of roleRows) {
+    const list = rolesByUser.get(row.userId) ?? [];
+    list.push(row.role);
+    rolesByUser.set(row.userId, list);
+  }
+
+  return rows.map(r => ({
+    ...r,
+    roles: rolesByUser.get(r.id) ?? [],
+  }));
 }
 
 export async function grantUserRole(userId: number, role: string) {

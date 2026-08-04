@@ -22,6 +22,9 @@ import Goals from "@/pages/Goals";
 import Guides from "@/pages/Guides";
 import Music from "@/pages/Music";
 import Devotional from "@/pages/Devotional";
+import Newsletter from "@/pages/Newsletter";
+import Settings from "@/pages/Settings";
+import Admin from "@/pages/Admin";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -49,6 +52,9 @@ function Router() {
       <Route path={"/guides"} component={Guides} />
       <Route path={"/music"} component={Music} />
       <Route path={"/devotional"} component={Devotional} />
+      <Route path={"/newsletter"} component={Newsletter} />
+      <Route path={"/settings"} component={Settings} />
+      <Route path={"/admin"} component={Admin} />
       <Route path={"/onboarding"} component={Onboarding} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
