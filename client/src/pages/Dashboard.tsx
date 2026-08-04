@@ -19,6 +19,9 @@ import {
   Users,
   Settings,
   LogOut,
+  Smile,
+  Flame,
+  Shield,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -228,7 +231,33 @@ export default function Dashboard() {
         </Card>
 
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-4 gap-4">
+        <div className="grid md:grid-cols-3 gap-4">
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation("/check-in")}
+          >
+            <CardHeader>
+              <Smile className="h-8 w-8 text-amber-600 mb-2" />
+              <CardTitle className="text-base">Check-In</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600">Today's reflection</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation("/check-ins")}
+          >
+            <CardHeader>
+              <Flame className="h-8 w-8 text-amber-600 mb-2" />
+              <CardTitle className="text-base">History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600">Streaks & milestones</p>
+            </CardContent>
+          </Card>
+
           <Card
             className="cursor-pointer hover:shadow-lg transition-shadow"
             onClick={() => setLocation("/journal")}
@@ -254,6 +283,19 @@ export default function Dashboard() {
               <p className="text-sm text-slate-600">
                 {overview?.activeGoals?.length || 0} active goals
               </p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation("/rules")}
+          >
+            <CardHeader>
+              <Shield className="h-8 w-8 text-amber-600 mb-2" />
+              <CardTitle className="text-base">Rules</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600">Boundaries & commitments</p>
             </CardContent>
           </Card>
 

@@ -15,6 +15,9 @@ import Terms from "@/pages/site/Terms";
 import Dashboard from "@/pages/Dashboard";
 import Onboarding from "@/pages/Onboarding";
 import Progress from "@/pages/Progress";
+import CheckInHistory from "@/pages/CheckInHistory";
+import Journal from "@/pages/Journal";
+import Rules from "@/pages/Rules";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -35,6 +38,9 @@ function Router() {
       <Route path={"/terms"} component={Terms} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/progress"} component={Progress} />
+      <Route path={"/check-ins"} component={CheckInHistory} />
+      <Route path={"/journal"} component={Journal} />
+      <Route path={"/rules"} component={Rules} />
       <Route path={"/onboarding"} component={Onboarding} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

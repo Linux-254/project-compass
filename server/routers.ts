@@ -242,6 +242,25 @@ export const appRouter = router({
       const evening = await db.getTodayCheckIn(ctx.user.id, "evening");
       return { morning, evening };
     }),
+
+    history: protectedProcedure
+      .input(
+        z.object({
+          limit: z.number().default(30),
+          offset: z.number().default(0),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        return db.listCheckIns(ctx.user.id, input.limit, input.offset);
+      }),
+
+    milestones: protectedProcedure.query(async ({ ctx }) => {
+      return db.getMilestones(ctx.user.id);
+    }),
+
+    streak: protectedProcedure.query(async ({ ctx }) => {
+      return db.getOrCreateStreak(ctx.user.id);
+    }),
   }),
 
   // ============================================================================
@@ -276,6 +295,25 @@ export const appRouter = router({
       )
       .query(async ({ ctx, input }) => {
         return db.getJournalEntries(ctx.user.id, input.limit, input.offset);
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          entryId: z.number(),
+          body: z.string().min(1),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.updateJournalEntry(ctx.user.id, input.entryId, input.body);
+        return { success: true };
+      }),
+
+    remove: protectedProcedure
+      .input(z.object({ entryId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteJournalEntry(ctx.user.id, input.entryId);
+        return { success: true };
       }),
   }),
 
@@ -341,6 +379,33 @@ export const appRouter = router({
     list: protectedProcedure.query(async ({ ctx }) => {
       return db.getActiveRules(ctx.user.id);
     }),
+
+    all: protectedProcedure.query(async ({ ctx }) => {
+      return db.getRules(ctx.user.id);
+    }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          ruleId: z.number(),
+          text: z.string().optional(),
+          active: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.updateRule(ctx.user.id, input.ruleId, {
+          text: input.text,
+          active: input.active,
+        });
+        return { success: true };
+      }),
+
+    remove: protectedProcedure
+      .input(z.object({ ruleId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteRule(ctx.user.id, input.ruleId);
+        return { success: true };
+      }),
   }),
 
   // ============================================================================
