@@ -9,7 +9,7 @@ export const appRouter = router({
   system: systemRouter,
 
   auth: router({
-    me: publicProcedure.query((opts) => opts.ctx.user),
+    me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -63,7 +63,11 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        await db.saveAssessmentResponse(input.assessmentId, input.dimensionId, input.response);
+        await db.saveAssessmentResponse(
+          input.assessmentId,
+          input.dimensionId,
+          input.response
+        );
         return { success: true };
       }),
 
@@ -71,14 +75,22 @@ export const appRouter = router({
       .input(
         z.object({
           assessmentId: z.number(),
-          substanceFocus: z.enum(["alcohol", "nicotine", "marijuana", "codeine", "prescription"]),
-          substanceFrequency: z.enum(["daily", "weekly", "occasional"]).optional(),
+          substanceFocus: z.enum([
+            "alcohol",
+            "nicotine",
+            "marijuana",
+            "codeine",
+            "prescription",
+          ]),
+          substanceFrequency: z
+            .enum(["daily", "weekly", "occasional"])
+            .optional(),
           substanceApproach: z.enum(["quit", "reduce"]).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
         await db.completeAssessment(input.assessmentId);
-        await db.savSubstanceFocus(
+        await db.saveSubstanceFocus(
           ctx.user.id,
           input.substanceFocus,
           input.substanceFrequency,
@@ -103,8 +115,14 @@ export const appRouter = router({
       const profile = await db.getOrCreateProfile(ctx.user.id);
       const streak = await db.getOrCreateStreak(ctx.user.id);
       const dimensionScores = await db.getLatestDimensionScores(ctx.user.id);
-      const todayMorningCheckIn = await db.getTodayCheckIn(ctx.user.id, "morning");
-      const todayEveningCheckIn = await db.getTodayCheckIn(ctx.user.id, "evening");
+      const todayMorningCheckIn = await db.getTodayCheckIn(
+        ctx.user.id,
+        "morning"
+      );
+      const todayEveningCheckIn = await db.getTodayCheckIn(
+        ctx.user.id,
+        "evening"
+      );
       const activeGoals = await db.getActiveGoals(ctx.user.id);
 
       return {
@@ -152,9 +170,16 @@ export const appRouter = router({
         if (input.mood) {
           const dimensions = await db.getLifeDimensions();
           // Save mood to mental-health dimension
-          const mentalHealthDim = dimensions.find((d) => d.slug === "mental-health");
+          const mentalHealthDim = dimensions.find(
+            d => d.slug === "mental-health"
+          );
           if (mentalHealthDim) {
-            await db.saveDimensionScore(ctx.user.id, mentalHealthDim.id, input.mood * 10, new Date());
+            await db.saveDimensionScore(
+              ctx.user.id,
+              mentalHealthDim.id,
+              input.mood * 10,
+              new Date()
+            );
           }
         }
 
@@ -182,7 +207,12 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        await db.createJournalEntry(ctx.user.id, input.body, input.dimensionId, input.promptId);
+        await db.createJournalEntry(
+          ctx.user.id,
+          input.body,
+          input.dimensionId,
+          input.promptId
+        );
         return { success: true };
       }),
 
