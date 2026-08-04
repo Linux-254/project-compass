@@ -203,10 +203,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4">
-              {overview?.dimensionScores?.slice(0, 6).map(dim => (
+              {(overview?.dimensionScores ?? []).map(dim => (
                 <div key={dim.dimensionId} className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium truncate pr-2">
                       {dim.dimensionLabel}
                     </span>
                     <span className="text-sm font-bold text-amber-600">
@@ -222,7 +222,7 @@ export default function Dashboard() {
               className="w-full mt-6"
               onClick={() => setLocation("/progress")}
             >
-              View All Dimensions
+              View All Dimensions & History
             </Button>
           </CardContent>
         </Card>

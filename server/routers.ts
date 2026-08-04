@@ -176,6 +176,21 @@ export const appRouter = router({
     getDimensionScores: protectedProcedure.query(async ({ ctx }) => {
       return db.getLatestDimensionScores(ctx.user.id);
     }),
+
+    getDimensionHistory: protectedProcedure
+      .input(
+        z.object({
+          dimensionId: z.number(),
+          limit: z.number().default(30),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        return db.getDimensionScoreHistory(
+          ctx.user.id,
+          input.dimensionId,
+          input.limit
+        );
+      }),
   }),
 
   // ============================================================================
