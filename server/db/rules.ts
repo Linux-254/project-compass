@@ -69,13 +69,33 @@ export async function deleteRule(userId: number, ruleId: number) {
     );
 }
 
+async function assertRuleOwner(
+  db: NonNullable<Awaited<ReturnType<typeof getDb>>>,
+  ruleId: number,
+  userId: number
+) {
+  const row = await db
+    .select({ userId: rulesBoundaries.userId })
+    .from(rulesBoundaries)
+    .where(eq(rulesBoundaries.id, ruleId))
+    .limit(1);
+  if (row.length === 0 || row[0].userId !== userId) {
+    const error = new Error("Rule not found");
+    (error as Error & { code?: string }).code = "NOT_FOUND";
+    throw error;
+  }
+}
+
 export async function recordRuleReview(
+  userId: number,
   ruleId: number,
   kept: boolean,
   notes?: string
 ) {
   const db = await getDb();
   if (!db) return;
+
+  await assertRuleOwner(db, ruleId, userId);
 
   await db.insert(ruleReviews).values({
     ruleId,
@@ -85,9 +105,15 @@ export async function recordRuleReview(
   });
 }
 
-export async function listRuleReviews(ruleId: number, limit = 10) {
+export async function listRuleReviews(
+  userId: number,
+  ruleId: number,
+  limit = 10
+) {
   const db = await getDb();
   if (!db) return [];
+
+  await assertRuleOwner(db, ruleId, userId);
 
   return db
     .select()

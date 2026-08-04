@@ -1,5 +1,5 @@
-import { eq } from "drizzle-orm";
-import { users, InsertUser } from "../../drizzle/schema";
+import { eq, and } from "drizzle-orm";
+import { users, userRoles, InsertUser } from "../../drizzle/schema";
 import { ENV } from "../_core/env";
 import { getDb } from "./client";
 
@@ -84,4 +84,67 @@ export async function getUserById(id: number) {
 
   const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserRoles(userId: number): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db
+    .select()
+    .from(userRoles)
+    .where(eq(userRoles.userId, userId));
+  return rows.map(row => row.role);
+}
+
+export async function listUsers(limit = 50, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: users.id,
+      openId: users.openId,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      createdAt: users.createdAt,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users)
+    .limit(limit)
+    .offset(offset);
+}
+
+export async function grantUserRole(userId: number, role: string) {
+  const db = await getDb();
+  if (!db) return;
+
+  const existing = await db
+    .select()
+    .from(userRoles)
+    .where(eq(userRoles.userId, userId))
+    .limit(1);
+
+  const hasRole = existing.some(row => row.role === role);
+  if (hasRole) return;
+
+  await db.insert(userRoles).values({
+    userId,
+    role: role as (typeof userRoles.$inferInsert)["role"],
+  });
+}
+
+export async function revokeUserRole(userId: number, role: string) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db
+    .delete(userRoles)
+    .where(
+      and(
+        eq(userRoles.userId, userId),
+        eq(userRoles.role, role as (typeof userRoles.$inferInsert)["role"])
+      )
+    );
 }

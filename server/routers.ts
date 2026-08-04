@@ -1,7 +1,12 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import {
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+  router,
+} from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 
@@ -64,6 +69,7 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         await db.saveAssessmentResponse(
+          ctx.user.id,
           input.assessmentId,
           input.dimensionId,
           input.response
@@ -89,7 +95,7 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        await db.completeAssessment(input.assessmentId);
+        await db.completeAssessment(ctx.user.id, input.assessmentId);
         await db.saveSubstanceFocus(
           ctx.user.id,
           input.substanceFocus,
@@ -264,8 +270,8 @@ export const appRouter = router({
           title: z.string().min(1),
         })
       )
-      .mutation(async ({ input }) => {
-        await db.addGoalStep(input.goalId, input.title);
+      .mutation(async ({ ctx, input }) => {
+        await db.addGoalStep(ctx.user.id, input.goalId, input.title);
         return { success: true };
       }),
   }),
@@ -377,6 +383,53 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         return db.updateUserPreferences(ctx.user.id, input);
+      }),
+  }),
+
+  // ============================================================================
+  // ADMIN (RBAC)
+  // ============================================================================
+
+  admin: router({
+    listUsers: adminProcedure
+      .input(
+        z.object({
+          limit: z.number().default(50),
+          offset: z.number().default(0),
+        })
+      )
+      .query(async ({ input }) => {
+        return db.listUsers(input.limit, input.offset);
+      }),
+
+    getUserRoles: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getUserRoles(input.userId);
+      }),
+
+    grantRole: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          role: z.enum(["supporter", "mentor", "moderator", "admin"]),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await db.grantUserRole(input.userId, input.role);
+        return { success: true };
+      }),
+
+    revokeRole: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          role: z.enum(["supporter", "mentor", "moderator", "admin"]),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await db.revokeUserRole(input.userId, input.role);
+        return { success: true };
       }),
   }),
 });

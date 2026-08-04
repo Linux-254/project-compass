@@ -1,5 +1,6 @@
 import { eq, and, desc } from "drizzle-orm";
 import { checkIns, streaks, milestones } from "../../drizzle/schema";
+import { encryptText, decryptText } from "../lib/encryption";
 import { getDb } from "./client";
 
 export async function getOrCreateStreak(userId: number) {
@@ -33,6 +34,8 @@ export async function createCheckIn(
   const db = await getDb();
   if (!db) return;
 
+  const payload = data.notes ? { notes: encryptText(data.notes) } : undefined;
+
   await db
     .insert(checkIns)
     .values({
@@ -42,7 +45,7 @@ export async function createCheckIn(
       mood: data.mood,
       energy: data.energy,
       cravings: data.cravings,
-      payload: data.notes ? { notes: data.notes } : undefined,
+      payload,
     })
     .onConflictDoUpdate({
       target: [checkIns.userId, checkIns.localDate, checkIns.part],
@@ -50,7 +53,7 @@ export async function createCheckIn(
         mood: data.mood,
         energy: data.energy,
         cravings: data.cravings,
-        payload: data.notes ? { notes: data.notes } : undefined,
+        payload,
       },
     });
 }
@@ -75,20 +78,33 @@ export async function getTodayCheckIn(
     )
     .limit(1);
 
-  return result.length > 0 ? result[0] : undefined;
+  return result.length > 0 ? decryptCheckIn(result[0]) : undefined;
 }
 
 export async function listCheckIns(userId: number, limit = 30, offset = 0) {
   const db = await getDb();
   if (!db) return [];
 
-  return db
+  const rows = await db
     .select()
     .from(checkIns)
     .where(eq(checkIns.userId, userId))
     .orderBy(desc(checkIns.createdAt))
     .limit(limit)
     .offset(offset);
+
+  return rows.map(decryptCheckIn);
+}
+
+function decryptCheckIn(checkIn: typeof checkIns.$inferSelect) {
+  const payload = checkIn.payload as { notes?: string } | null;
+  if (payload?.notes) {
+    return {
+      ...checkIn,
+      payload: { notes: decryptText(payload.notes) },
+    };
+  }
+  return checkIn;
 }
 
 export async function getMilestones(userId: number) {
