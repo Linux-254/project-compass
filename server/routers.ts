@@ -596,6 +596,36 @@ export const appRouter = router({
         );
         return { success: true };
       }),
+
+    updateIssue: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          type: z
+            .enum(["daily", "weekly", "milestone", "dimension", "situation"])
+            .optional(),
+          subject: z.string().min(1).optional(),
+          body: z.string().min(1).optional(),
+          scheduledFor: z.string().nullable().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, scheduledFor, ...rest } = input;
+        await db.updateNewsletterIssue(id, {
+          ...rest,
+          ...(scheduledFor === undefined
+            ? {}
+            : { scheduledFor: scheduledFor ? new Date(scheduledFor) : null }),
+        });
+        return { success: true };
+      }),
+
+    deleteIssue: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteNewsletterIssue(input.id);
+        return { success: true };
+      }),
   }),
 
   // ============================================================================

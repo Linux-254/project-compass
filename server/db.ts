@@ -819,6 +819,28 @@ export async function createNewsletterIssue(type: string, subject: string, body:
   await db.insert(newsletterIssues).values({ type: type as "daily" | "weekly" | "milestone" | "dimension" | "situation", subject, body, scheduledFor });
 }
 
+export async function updateNewsletterIssue(
+  id: number,
+  input: {
+    type?: "daily" | "weekly" | "milestone" | "dimension" | "situation";
+    subject?: string;
+    body?: string;
+    scheduledFor?: Date | null;
+  }
+) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(newsletterIssues).set(input).where(eq(newsletterIssues.id, id));
+  return true;
+}
+
+export async function deleteNewsletterIssue(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.delete(newsletterIssues).where(eq(newsletterIssues.id, id));
+  return true;
+}
+
 export async function getResourcesByType(type: string, limit = 20) {
   const db = await getDb();
   if (!db) return [];

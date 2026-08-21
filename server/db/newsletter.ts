@@ -152,3 +152,30 @@ export async function recordNewsletterSend(
     .values({ issueId, subscriptionId, sentAt: new Date(), dedupeKey })
     .onConflictDoNothing({ target: newsletterSends.dedupeKey });
 }
+
+export async function updateNewsletterIssue(
+  id: number,
+  input: {
+    type?: "daily" | "weekly" | "milestone" | "dimension" | "situation";
+    subject?: string;
+    body?: string;
+    scheduledFor?: Date | null;
+  }
+) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(newsletterIssues)
+    .set(input)
+    .where(eq(newsletterIssues.id, id));
+  return true;
+}
+
+export async function deleteNewsletterIssue(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db.delete(newsletterIssues).where(eq(newsletterIssues.id, id));
+  return true;
+}

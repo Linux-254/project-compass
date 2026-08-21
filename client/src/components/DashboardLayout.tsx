@@ -45,6 +45,7 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
@@ -117,6 +118,7 @@ type DashboardLayoutContentProps = {
 
 function DashboardLayoutContent({ children, setSidebarWidth }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
+  const rolesQuery = trpc.auth.getRoles.useQuery(undefined, { enabled: Boolean(user) });
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -124,6 +126,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: DashboardLayoutCo
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const activeMenuItem = menuItems.find(item => location === item.path);
+  const canManagePlatform = user?.role === "admin" || rolesQuery.data?.includes("admin");
 
   useEffect(() => {
     if (isCollapsed) setIsResizing(false);
@@ -186,7 +189,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: DashboardLayoutCo
                 );
               })}
             </SidebarMenu>
-            {user?.role === "admin" && (
+            {canManagePlatform && (
               <>
                 <p className="mb-2 mt-6 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/45 group-data-[collapsible=icon]:hidden">Stewardship</p>
                 <SidebarMenu>

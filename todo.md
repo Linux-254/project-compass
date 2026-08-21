@@ -233,4 +233,8 @@
 - [ ] Reconcile PostgreSQL schema fields with backend helpers and tRPC client contracts so the full-stack build compiles cleanly
 - [ ] Finish nature-led redesign for dashboard, settings, newsletter, and onboarding routes
 - [ ] Diagnose and repair OAuth callback failure in server/_core/oauth.ts or session cookie configuration
-- [ ] Implement a restorative loading spinner and overlay on the frontend while OAuth handoff and session verification are processing
+- [x] Implement a restorative loading spinner and overlay on the frontend while OAuth handoff and session verification are processing
+- [x] Add a safe timeout fallback so stale OAuth handoff state returns users to the sign-in gate
+- [x] Add smooth CSS fade-in and fade-out keyframes for the OAuth loading overlay
+- [x] Introduce burnt-wood typography tokens (e.g. text-[oklch(0.38_0.07_52)]) for nature-led headings
+- [x] Redesign the admin dashboard with glassmorphic cards, RBAC-aware user-to-admin navigation, role grant/revoke controls, and newsletter issue CRUD operations
