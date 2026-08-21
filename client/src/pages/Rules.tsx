@@ -182,12 +182,12 @@ export default function Rules() {
                     <div className="flex items-start gap-3 flex-1">
                       <Checkbox
                         checked={rule.active !== false}
-                        onCheckedChange={checked =>
-                          toggleMutation.mutate({
-                            ruleId: rule.id,
-                            active: checked === true,
-                          })
-                        }
+                          onCheckedChange={checked =>
+                            toggleMutation.mutate({
+                              ruleId: rule.id,
+                              isCompleted: checked === true,
+                            })
+                          }
                         className="mt-1"
                       />
                       <div className="flex-1">

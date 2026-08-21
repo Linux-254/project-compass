@@ -223,3 +223,12 @@
 - [x] Tailwind CSS configuration
 - [x] TypeScript setup
 - [ ] Fix TRPCClientError: db.getSubstanceFocus is not a function on the dashboard route
+- [ ] Redesign ReForge UI/UX around a nature-led restorative visual language
+- [ ] Replace autumn-only surfaces with botanical earth, moss, clay, mist, and forest tokens
+- [ ] Create and upload nature-led page atmosphere assets for public, sign-in, dashboard, journal, check-in, goals, guides, music, rules, newsletter, and settings
+- [ ] Rebuild public landing and sign-in composition with nature imagery, calm motion, and accessible controls
+- [ ] Rework authenticated shell, navigation, dashboard, and all recovery workspace pages with contextual nature cues
+- [ ] Add responsive and reduced-motion polish for the nature redesign
+- [ ] Validate the redesign with type checks, tests, production build, and screenshots
+- [ ] Reconcile PostgreSQL schema fields with backend helpers and tRPC client contracts so the full-stack build compiles cleanly
+- [ ] Finish nature-led redesign for dashboard, settings, newsletter, and onboarding routes

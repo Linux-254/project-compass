@@ -188,8 +188,7 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         return db.getDimensionScoreHistory(
           ctx.user.id,
-          input.dimensionId,
-          input.limit
+          input.dimensionId
         );
       }),
   }),
@@ -426,13 +425,13 @@ export const appRouter = router({
         z.object({
           ruleId: z.number(),
           text: z.string().optional(),
-          active: z.boolean().optional(),
+          isCompleted: z.boolean().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
         await db.updateRule(ctx.user.id, input.ruleId, {
           text: input.text,
-          active: input.active,
+          isCompleted: input.isCompleted,
         });
         return { success: true };
       }),
@@ -498,12 +497,29 @@ export const appRouter = router({
       .input(
         z.object({
           email: z.string().email(),
+          sendTypes: z
+            .array(
+              z.enum(["daily", "weekly", "milestone", "dimension", "situation"])
+            )
+            .min(1),
           source: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        await db.subscribeToNewsletter(input.email, undefined, input.source);
-        return { success: true };
+        await db.subscribeToNewsletter(
+          input.email,
+          undefined,
+          input.source,
+          input.sendTypes
+        );
+        return { success: true, status: "pending" as const };
+      }),
+
+    confirm: publicProcedure
+      .input(z.object({ token: z.string().min(32) }))
+      .mutation(async ({ input }) => {
+        const confirmed = await db.confirmNewsletterSubscription(input.token);
+        return { confirmed };
       }),
 
     unsubscribe: publicProcedure

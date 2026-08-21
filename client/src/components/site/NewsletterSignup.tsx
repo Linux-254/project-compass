@@ -26,7 +26,11 @@ export function NewsletterSignup({
     e.preventDefault();
     const trimmed = email.trim();
     if (!trimmed) return;
-    subscribe.mutate({ email: trimmed, source: "marketing-site" });
+    subscribe.mutate({
+      email: trimmed,
+      sendTypes: ["daily", "weekly"],
+      source: "marketing-site",
+    });
   };
 
   return (

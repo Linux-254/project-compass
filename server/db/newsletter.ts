@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { eq, and, desc } from "drizzle-orm";
 import {
   newsletterSubscriptions,
@@ -10,11 +11,13 @@ import { getDb } from "./client";
 export async function subscribeToNewsletter(
   email: string,
   userId?: number,
-  source?: string
+  source?: string,
+  preferences?: InsertNewsletterSubscription["preferences"]
 ) {
   const db = await getDb();
   if (!db) return;
 
+  const confirmationToken = randomBytes(32).toString("hex");
   const existing = await db
     .select()
     .from(newsletterSubscriptions)
@@ -25,22 +28,51 @@ export async function subscribeToNewsletter(
     await db
       .update(newsletterSubscriptions)
       .set({
-        status: "subscribed",
+        status: "pending",
         userId: userId ?? existing[0].userId,
         source: source ?? existing[0].source,
+        preferences: preferences ?? existing[0].preferences,
+        confirmationToken,
+        confirmedAt: null,
         unsubscribedAt: null,
-        subscribedAt: new Date(),
       })
       .where(eq(newsletterSubscriptions.email, email));
-    return;
+    return { status: "pending" as const };
   }
 
   await db.insert(newsletterSubscriptions).values({
     email,
     userId,
     source,
-    status: "subscribed",
+    preferences,
+    status: "pending",
+    confirmationToken,
+    confirmedAt: null,
   });
+  return { status: "pending" as const };
+}
+
+export async function confirmNewsletterSubscription(token: string) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const result = await db
+    .select({ id: newsletterSubscriptions.id })
+    .from(newsletterSubscriptions)
+    .where(eq(newsletterSubscriptions.confirmationToken, token))
+    .limit(1);
+  if (result.length === 0) return false;
+
+  await db
+    .update(newsletterSubscriptions)
+    .set({
+      status: "subscribed",
+      confirmedAt: new Date(),
+      subscribedAt: new Date(),
+      confirmationToken: null,
+    })
+    .where(eq(newsletterSubscriptions.id, result[0].id));
+  return true;
 }
 
 export async function unsubscribeFromNewsletter(email: string) {

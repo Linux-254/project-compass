@@ -140,16 +140,14 @@ export default function Admin() {
                         {u.name || u.email}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {u.roles.map(r => (
-                          <Badge key={r} variant="outline">
-                            {r}
-                          </Badge>
-                        ))}
+                        <Badge variant="outline">
+                          {u.role}
+                        </Badge>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 shrink-0">
                       {ROLES.map(role => {
-                        const hasRole = u.roles.includes(role);
+                        const hasRole = u.role === role;
                         return (
                           <Button
                             key={role}

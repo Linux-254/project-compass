@@ -99,6 +99,7 @@ export const timeAvailableEnum = pgEnum("time_available", [
   "flexible",
 ]);
 export const newsletterStatusEnum = pgEnum("newsletter_status", [
+  "pending",
   "subscribed",
   "unsubscribed",
   "bounced",
@@ -141,9 +142,7 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").default("user").notNull(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
-  lastSignedIn: timestamp("lastSignedIn", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
 export type User = typeof users.$inferSelect;
@@ -675,6 +674,8 @@ export const newsletterSubscriptions = pgTable(
     status: newsletterStatusEnum("status").default("subscribed"),
     source: varchar("source", { length: 255 }),
     preferences: jsonb("preferences"), // frequency/topics preferences
+    confirmationToken: varchar("confirmationToken", { length: 128 }),
+    confirmedAt: timestamp("confirmedAt", { withTimezone: true }),
     subscribedAt: timestamp("subscribedAt", {
       withTimezone: true,
     }).defaultNow(),

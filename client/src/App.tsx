@@ -13,18 +13,11 @@ import Contact from "@/pages/site/Contact";
 import Privacy from "@/pages/site/Privacy";
 import Terms from "@/pages/site/Terms";
 import Dashboard from "@/pages/Dashboard";
-import Onboarding from "@/pages/Onboarding";
-import Progress from "@/pages/Progress";
 import CheckInHistory from "@/pages/CheckInHistory";
-import Journal from "@/pages/Journal";
-import Rules from "@/pages/Rules";
-import Goals from "@/pages/Goals";
-import Guides from "@/pages/Guides";
-import Music from "@/pages/Music";
 import Devotional from "@/pages/Devotional";
-import Newsletter from "@/pages/Newsletter";
-import Settings from "@/pages/Settings";
 import Admin from "@/pages/Admin";
+import { RulesPage, NewsletterPage } from "@/pages/AdditionalFeatures";
+import { GoalsPage, GuidesPage, JournalPage, MusicPage, OnboardingPage, ProgressPage, SettingsPage } from "@/pages/RecoveryWorkspace";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -44,18 +37,18 @@ function Router() {
       <Route path={"/privacy"} component={Privacy} />
       <Route path={"/terms"} component={Terms} />
       <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/progress"} component={Progress} />
+      <Route path={"/progress"} component={ProgressPage} />
       <Route path={"/check-ins"} component={CheckInHistory} />
-      <Route path={"/journal"} component={Journal} />
-      <Route path={"/rules"} component={Rules} />
-      <Route path={"/goals"} component={Goals} />
-      <Route path={"/guides"} component={Guides} />
-      <Route path={"/music"} component={Music} />
+      <Route path={"/journal"} component={JournalPage} />
+      <Route path={"/rules"} component={RulesPage} />
+      <Route path={"/goals"} component={GoalsPage} />
+      <Route path={"/guides"} component={GuidesPage} />
+      <Route path={"/music"} component={MusicPage} />
       <Route path={"/devotional"} component={Devotional} />
-      <Route path={"/newsletter"} component={Newsletter} />
-      <Route path={"/settings"} component={Settings} />
+      <Route path={"/newsletter"} component={NewsletterPage} />
+      <Route path={"/settings"} component={SettingsPage} />
       <Route path={"/admin"} component={Admin} />
-      <Route path={"/onboarding"} component={Onboarding} />
+      <Route path={"/onboarding"} component={OnboardingPage} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

@@ -1,6 +1,7 @@
 import { eq, and, desc, asc, inArray } from "drizzle-orm";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-import { drizzle } from "drizzle-orm/mysql2";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 import {
   InsertUser,
   users,
@@ -20,6 +21,8 @@ import {
   resources,
   musicProfiles,
   newsletterSubscriptions,
+  newsletterIssues,
+  playlists,
   substanceFocus,
   userPreferences,
   supporterLinks,
@@ -60,7 +63,8 @@ export function decryptSensitive(value: string | null): string | null {
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      const client = postgres(process.env.DATABASE_URL, { max: 5 });
+      _db = drizzle(client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -123,7 +127,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
       set: updateSet,
     });
   } catch (error) {
@@ -305,7 +310,7 @@ export async function getMilestones(userId: number) {
 export async function createMilestone(userId: number, title: string, targetDays: number) {
   const db = await getDb();
   if (!db) return;
-  await db.insert(milestones).values({ userId, title, targetDays });
+  await db.insert(milestones).values({ userId, dayCount: targetDays, achievedAt: new Date() });
 }
 
 export async function listCheckIns(userId: number, limit = 30, offset = 0) {
@@ -462,7 +467,7 @@ export async function deleteGoal(userId: number, goalId: number) {
   await db.delete(goals).where(and(eq(goals.id, goalId), eq(goals.userId, userId)));
 }
 
-export async function updateGoalStatus(userId: number, goalId: number, status: string) {
+export async function updateGoalStatus(userId: number, goalId: number, status: "active" | "completed" | "abandoned") {
   const db = await getDb();
   if (!db) return;
   await db.update(goals).set({ status }).where(and(eq(goals.id, goalId), eq(goals.userId, userId)));
@@ -492,10 +497,10 @@ export async function toggleGoalStep(userId: number, goalId: number, stepId: num
   const db = await getDb();
   if (!db) return;
 
-  const step = await db.select().from(goalSteps).where(eq(goalSteps.id, stepId)).limit(1);
+  const step = await db.select().from(goalSteps).where(and(eq(goalSteps.id, stepId), eq(goalSteps.goalId, goalId))).limit(1);
   if (step[0]) {
-    const newStatus = !step[0].isCompleted;
-    await db.update(goalSteps).set({ isCompleted: newStatus }).where(eq(goalSteps.id, stepId));
+    const nextDoneAt = step[0].doneAt ? null : new Date();
+    await db.update(goalSteps).set({ doneAt: nextDoneAt }).where(eq(goalSteps.id, stepId));
   }
 }
 
@@ -652,7 +657,7 @@ export async function subscribeToNewsletter(
         status: "pending",
         confirmationToken,
         confirmedAt: null,
-        sendTypes,
+        preferences: { sendTypes },
         subscribedAt: null,
         unsubscribedAt: null,
       })
@@ -664,7 +669,7 @@ export async function subscribeToNewsletter(
       source,
       status: "pending",
       confirmationToken,
-      sendTypes,
+      preferences: { sendTypes },
     });
   }
 
@@ -783,7 +788,7 @@ export async function getSubscriptionByEmail(email: string) {
 export async function updateSubscriptionPreferences(email: string, prefs: Record<string, unknown>) {
   const db = await getDb();
   if (!db) return;
-  await db.update(newsletterSubscriptions).set({ sendTypes: JSON.stringify(prefs) }).where(eq(newsletterSubscriptions.email, email));
+  await db.update(newsletterSubscriptions).set({ preferences: prefs }).where(eq(newsletterSubscriptions.email, email));
 }
 
 export async function listNewsletterIssues(limit = 20, offset = 0) {
@@ -795,13 +800,13 @@ export async function listNewsletterIssues(limit = 20, offset = 0) {
 export async function createNewsletterIssue(type: string, subject: string, body: string, scheduledFor?: Date) {
   const db = await getDb();
   if (!db) return;
-  await db.insert(newsletterIssues).values({ sendType: type, subject, body, scheduledFor });
+  await db.insert(newsletterIssues).values({ type: type as "daily" | "weekly" | "milestone" | "dimension" | "situation", subject, body, scheduledFor });
 }
 
 export async function getResourcesByType(type: string, limit = 20) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(resources).where(eq(resources.type, type)).limit(limit);
+  return db.select().from(resources).where(eq(resources.type, type as "activity_guide" | "situation_guide" | "relationship_guide" | "devotional" | "article")).limit(limit);
 }
 
 export async function getResourceById(id: number) {
@@ -839,19 +844,19 @@ export async function revokeUserRole(userId: number, role: string) {
 export async function getRules(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(rules).where(eq(rules.userId, userId));
+  return db.select().from(rulesBoundaries).where(eq(rulesBoundaries.userId, userId));
 }
 
 export async function updateRule(userId: number, ruleId: number, data: { text?: string; isCompleted?: boolean; reviewCadence?: string }) {
   const db = await getDb();
   if (!db) return;
-  await db.update(rules).set(data).where(and(eq(rules.id, ruleId), eq(rules.userId, userId)));
+  await db.update(rulesBoundaries).set({ text: data.text, active: data.isCompleted === undefined ? undefined : data.isCompleted, reviewCadence: data.reviewCadence as "daily" | "weekly" | "monthly" | undefined }).where(and(eq(rulesBoundaries.id, ruleId), eq(rulesBoundaries.userId, userId)));
 }
 
 export async function deleteRule(userId: number, ruleId: number) {
   const db = await getDb();
   if (!db) return;
-  await db.delete(rules).where(and(eq(rules.id, ruleId), eq(rules.userId, userId)));
+  await db.delete(rulesBoundaries).where(and(eq(rulesBoundaries.id, ruleId), eq(rulesBoundaries.userId, userId)));
 }
 
 export async function getPlaylists(userId: number) {
@@ -860,10 +865,10 @@ export async function getPlaylists(userId: number) {
   return db.select().from(playlists).where(eq(playlists.userId, userId));
 }
 
-export async function createPlaylist(userId: number, name: string, description?: string, safeGenres?: string) {
+export async function createPlaylist(userId: number, title: string, context?: string, tracks?: unknown[]) {
   const db = await getDb();
   if (!db) return;
-  await db.insert(playlists).values({ userId, name, description, safeGenres });
+  await db.insert(playlists).values({ userId, title, context, tracks: tracks ?? [] });
 }
 
 export async function getResourcesByDimension(dimensionId: number, type?: string) {
@@ -889,27 +894,25 @@ export async function getSubstanceFocus(userId: number) {
   return res[0];
 }
 
-export async function saveSubstanceFocus(userId: number, focusData: { primarySubstance: string; secondarySubstances?: string[]; notes?: string }) {
+export async function saveSubstanceFocus(
+  userId: number,
+  substance: "alcohol" | "nicotine" | "marijuana" | "codeine" | "prescription",
+  frequency?: "daily" | "weekly" | "occasional",
+  duration?: string,
+  approach: "quit" | "reduce" = "quit"
+) {
   const db = await getDb();
   if (!db) return;
   const existing = await getSubstanceFocus(userId);
+  const values = { userId, substance, frequency, duration, approach };
   if (existing) {
-    await db.update(substanceFocus).set({
-      primarySubstance: focusData.primarySubstance,
-      secondarySubstances: focusData.secondarySubstances ? JSON.stringify(focusData.secondarySubstances) : null,
-      notes: focusData.notes,
-    }).where(eq(substanceFocus.userId, userId));
+    await db.update(substanceFocus).set({ substance, frequency, duration, approach }).where(eq(substanceFocus.userId, userId));
   } else {
-    await db.insert(substanceFocus).values({
-      userId,
-      primarySubstance: focusData.primarySubstance,
-      secondarySubstances: focusData.secondarySubstances ? JSON.stringify(focusData.secondarySubstances) : null,
-      notes: focusData.notes,
-    });
+    await db.insert(substanceFocus).values(values);
   }
 }
 export async function getDimensionScoreHistory(userId: number, dimensionId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(dimensionScores).where(and(eq(dimensionScores.userId, userId), eq(dimensionScores.dimensionId, dimensionId))).orderBy(desc(dimensionScores.recordedAt)).limit(30);
+  return db.select().from(dimensionScores).where(and(eq(dimensionScores.userId, userId), eq(dimensionScores.dimensionId, dimensionId))).orderBy(desc(dimensionScores.capturedOn)).limit(30);
 }
