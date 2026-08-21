@@ -1,4 +1,5 @@
 import { eq, and, desc, asc, inArray } from "drizzle-orm";
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -26,6 +27,34 @@ import {
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
+
+const SENSITIVE_PREFIX = "enc:v1:";
+const sensitiveKey = createHash("sha256").update(ENV.cookieSecret || "reforge-development-key").digest();
+
+export function encryptSensitive(value: string): string {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", sensitiveKey, iv);
+  const ciphertext = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `${SENSITIVE_PREFIX}${iv.toString("base64url")}:${tag.toString("base64url")}:${ciphertext.toString("base64url")}`;
+}
+
+export function decryptSensitive(value: string | null): string | null {
+  if (!value) return null;
+  if (!value.startsWith(SENSITIVE_PREFIX)) return value;
+  const [, , ivEncoded, tagEncoded, ciphertextEncoded] = value.split(":");
+  if (!ivEncoded || !tagEncoded || !ciphertextEncoded) return null;
+  try {
+    const decipher = createDecipheriv("aes-256-gcm", sensitiveKey, Buffer.from(ivEncoded, "base64url"));
+    decipher.setAuthTag(Buffer.from(tagEncoded, "base64url"));
+    return Buffer.concat([
+      decipher.update(Buffer.from(ciphertextEncoded, "base64url")),
+      decipher.final(),
+    ]).toString("utf8");
+  } catch {
+    return null;
+  }
+}
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
@@ -221,6 +250,7 @@ export async function createAssessment(userId: number) {
 }
 
 export async function saveAssessmentResponse(
+  userId: number,
   assessmentId: number,
   dimensionId: number,
   payload: Record<string, unknown>
@@ -228,21 +258,24 @@ export async function saveAssessmentResponse(
   const db = await getDb();
   if (!db) return;
 
-  await db.insert(assessmentResponses).values({
-    assessmentId,
-    dimensionId,
-    payload,
-  });
+  const ownedAssessment = await db
+    .select({ id: assessments.id })
+    .from(assessments)
+    .where(and(eq(assessments.id, assessmentId), eq(assessments.userId, userId)))
+    .limit(1);
+  if (!ownedAssessment[0]) throw new Error("Assessment not found");
+
+  await db.insert(assessmentResponses).values({ assessmentId, dimensionId, payload });
 }
 
-export async function completeAssessment(assessmentId: number) {
+export async function completeAssessment(userId: number, assessmentId: number) {
   const db = await getDb();
   if (!db) return;
 
   await db
     .update(assessments)
     .set({ completedAt: new Date() })
-    .where(eq(assessments.id, assessmentId));
+    .where(and(eq(assessments.id, assessmentId), eq(assessments.userId, userId)));
 }
 
 // ============================================================================
@@ -272,15 +305,29 @@ export async function createCheckIn(
   const db = await getDb();
   if (!db) return;
 
-  await db.insert(checkIns).values({
+  const existing = await db
+    .select()
+    .from(checkIns)
+    .where(and(eq(checkIns.userId, userId), eq(checkIns.localDate, localDate), eq(checkIns.part, part)))
+    .limit(1);
+  const payload = data.notes ? { notes: encryptSensitive(data.notes) } : undefined;
+  if (existing[0]) {
+    await db
+      .update(checkIns)
+      .set({ mood: data.mood, energy: data.energy, cravings: data.cravings, payload })
+      .where(eq(checkIns.id, existing[0].id));
+    return existing[0].id;
+  }
+  const result = await db.insert(checkIns).values({
     userId,
     localDate,
     part,
     mood: data.mood,
     energy: data.energy,
     cravings: data.cravings,
-    payload: data.notes ? { notes: data.notes } : undefined,
+    payload,
   });
+  return (result as { insertId?: number }).insertId;
 }
 
 export async function getTodayCheckIn(userId: number, part: "morning" | "evening") {
@@ -294,7 +341,12 @@ export async function getTodayCheckIn(userId: number, part: "morning" | "evening
     .where(and(eq(checkIns.userId, userId), eq(checkIns.localDate, today), eq(checkIns.part, part)))
     .limit(1);
 
-  return result.length > 0 ? result[0] : undefined;
+  if (!result[0]) return undefined;
+  const row = result[0];
+  const notes = typeof row.payload === "object" && row.payload && "notes" in row.payload
+    ? decryptSensitive(String((row.payload as { notes?: string }).notes ?? ""))
+    : null;
+  return { ...row, payload: notes ? { notes } : null };
 }
 
 // ============================================================================
@@ -310,25 +362,27 @@ export async function createJournalEntry(
   const db = await getDb();
   if (!db) return;
 
-  await db.insert(journalEntries).values({
+  const result = await db.insert(journalEntries).values({
     userId,
-    body,
+    body: encryptSensitive(body),
     dimensionId,
     promptId,
   });
+  return (result as { insertId?: number }).insertId;
 }
 
 export async function getJournalEntries(userId: number, limit = 20, offset = 0) {
   const db = await getDb();
   if (!db) return [];
 
-  return db
+  const rows = await db
     .select()
     .from(journalEntries)
     .where(eq(journalEntries.userId, userId))
     .orderBy(desc(journalEntries.createdAt))
     .limit(limit)
     .offset(offset);
+  return rows.map((row) => ({ ...row, body: decryptSensitive(row.body) ?? "" }));
 }
 
 // ============================================================================
@@ -500,16 +554,72 @@ export async function updateMusicProfile(
 // NEWSLETTER
 // ============================================================================
 
-export async function subscribeToNewsletter(email: string, userId?: number, source?: string) {
+export async function subscribeToNewsletter(
+  email: string,
+  userId?: number,
+  source?: string,
+  sendTypes: string[] = ["daily", "weekly"],
+) {
   const db = await getDb();
-  if (!db) return;
+  if (!db) return { confirmationRequired: true } as const;
 
-  await db.insert(newsletterSubscriptions).values({
-    email,
-    userId,
-    source,
-    status: "subscribed",
-  });
+  const normalizedEmail = email.trim().toLowerCase();
+  const confirmationToken = randomBytes(32).toString("hex");
+  const existing = await db
+    .select()
+    .from(newsletterSubscriptions)
+    .where(eq(newsletterSubscriptions.email, normalizedEmail))
+    .limit(1);
+
+  if (existing[0]) {
+    await db
+      .update(newsletterSubscriptions)
+      .set({
+        userId,
+        source,
+        status: "pending",
+        confirmationToken,
+        confirmedAt: null,
+        sendTypes,
+        subscribedAt: null,
+        unsubscribedAt: null,
+      })
+      .where(eq(newsletterSubscriptions.id, existing[0].id));
+  } else {
+    await db.insert(newsletterSubscriptions).values({
+      email: normalizedEmail,
+      userId,
+      source,
+      status: "pending",
+      confirmationToken,
+      sendTypes,
+    });
+  }
+
+  return { confirmationRequired: true } as const;
+}
+
+export async function confirmNewsletterSubscription(token: string) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const subscription = await db
+    .select()
+    .from(newsletterSubscriptions)
+    .where(eq(newsletterSubscriptions.confirmationToken, token))
+    .limit(1);
+  if (!subscription[0]) return false;
+
+  await db
+    .update(newsletterSubscriptions)
+    .set({
+      status: "subscribed",
+      confirmedAt: new Date(),
+      subscribedAt: new Date(),
+      confirmationToken: null,
+    })
+    .where(eq(newsletterSubscriptions.id, subscription[0].id));
+  return true;
 }
 
 export async function unsubscribeFromNewsletter(email: string) {

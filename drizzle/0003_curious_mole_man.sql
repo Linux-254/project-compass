@@ -1,0 +1,1 @@
+ALTER TABLE `newsletter_subscriptions` MODIFY COLUMN `sendTypes` json;

@@ -63,7 +63,7 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        await db.saveAssessmentResponse(input.assessmentId, input.dimensionId, input.response);
+        await db.saveAssessmentResponse(ctx.user.id, input.assessmentId, input.dimensionId, input.response);
         return { success: true };
       }),
 
@@ -77,7 +77,7 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        await db.completeAssessment(input.assessmentId);
+        await db.completeAssessment(ctx.user.id, input.assessmentId);
         await db.savSubstanceFocus(
           ctx.user.id,
           input.substanceFocus,
@@ -89,7 +89,8 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    getDimensions: publicProcedure.query(async ({ ctx }) => {
+    getDimensions: publicProcedure.query(async () => {
+      await db.seedLifeDimensions();
       return db.getLifeDimensions();
     }),
   }),
@@ -294,11 +295,21 @@ export const appRouter = router({
         z.object({
           email: z.string().email(),
           source: z.string().optional(),
+          sendTypes: z
+            .array(z.enum(["daily", "weekly", "milestone", "dimension", "situation"]))
+            .min(1)
+            .default(["daily", "weekly"]),
         })
       )
       .mutation(async ({ input }) => {
-        await db.subscribeToNewsletter(input.email, undefined, input.source);
-        return { success: true };
+        return db.subscribeToNewsletter(input.email, undefined, input.source, input.sendTypes);
+      }),
+
+    confirm: publicProcedure
+      .input(z.object({ token: z.string().min(16) }))
+      .mutation(async ({ input }) => {
+        const confirmed = await db.confirmNewsletterSubscription(input.token);
+        return { confirmed };
       }),
 
     unsubscribe: publicProcedure
