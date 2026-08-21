@@ -2,6 +2,7 @@ import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
+import { OAUTH_PENDING_KEY } from "@/components/OAuthLoadingOverlay";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -68,6 +69,14 @@ export function useAuth(options?: UseAuthOptions) {
     logoutMutation.error,
     logoutMutation.isPending,
   ]);
+
+  useEffect(() => {
+    if (meQuery.isLoading || !state.user || typeof window === "undefined") return;
+    try {
+      window.sessionStorage.removeItem(OAUTH_PENDING_KEY);
+    } catch {}
+    window.dispatchEvent(new Event("reforge:oauth-complete"));
+  }, [meQuery.isLoading, state.user]);
 
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;

@@ -233,3 +233,4 @@
 - [ ] Reconcile PostgreSQL schema fields with backend helpers and tRPC client contracts so the full-stack build compiles cleanly
 - [ ] Finish nature-led redesign for dashboard, settings, newsletter, and onboarding routes
 - [ ] Diagnose and repair OAuth callback failure in server/_core/oauth.ts or session cookie configuration
+- [ ] Implement a restorative loading spinner and overlay on the frontend while OAuth handoff and session verification are processing

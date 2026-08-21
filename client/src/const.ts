@@ -1,6 +1,7 @@
 import { OAUTH_STATE_COOKIE, encodeOAuthState } from "@shared/const";
 
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { OAUTH_PENDING_EVENT, OAUTH_PENDING_KEY } from "@/components/OAuthLoadingOverlay";
 
 // Start the Manus OAuth login. Call this from an event handler or effect at the
 // moment you want to navigate, e.g. `onClick={() => startLogin()}`.
@@ -27,5 +28,13 @@ export const startLogin = () => {
   url.searchParams.set("state", state);
   url.searchParams.set("type", "signIn");
 
-  window.location.href = url.toString();
+  try {
+    window.sessionStorage.setItem(OAUTH_PENDING_KEY, "1");
+  } catch {}
+  window.dispatchEvent(new Event(OAUTH_PENDING_EVENT));
+
+  // Give the application one paint to show the handoff state before navigation.
+  window.requestAnimationFrame(() => {
+    window.location.href = url.toString();
+  });
 };

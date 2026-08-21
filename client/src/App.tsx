@@ -21,6 +21,7 @@ import { GoalsPage, GuidesPage, JournalPage, MusicPage, OnboardingPage, Progress
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { OAuthLoadingOverlay } from "./components/OAuthLoadingOverlay";
 
 function Router() {
   return (
@@ -62,6 +63,7 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
+          <OAuthLoadingOverlay />
           <Router />
         </TooltipProvider>
       </ThemeProvider>
