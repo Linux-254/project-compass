@@ -1,24 +1,374 @@
+import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import DashboardLayout from "@/components/DashboardLayout";
-import { REFORGE_ASSETS } from "@/config/assets";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Heart, Music, Sparkles, Target, TrendingUp } from "lucide-react";
+import {
+  Heart,
+  TrendingUp,
+  Target,
+  BookOpen,
+  Music,
+  Users,
+  Settings,
+  LogOut,
+  Smile,
+  Flame,
+  Shield,
+  HeartHandshake,
+} from "lucide-react";
 import { useLocation } from "wouter";
 
-function DashboardSkeleton() {
-  return <div className="mx-auto max-w-6xl space-y-6"><div className="h-28 animate-pulse rounded-[2rem] bg-muted/50" /><div className="grid gap-6 lg:grid-cols-[1.7fr_1fr]"><div className="h-52 animate-pulse rounded-2xl bg-muted/50" /><div className="h-52 animate-pulse rounded-2xl bg-muted/50" /></div><div className="h-64 animate-pulse rounded-2xl bg-muted/50" /></div>;
-}
-
 export default function Dashboard() {
+  const { user, logout } = useAuth({
+    redirectOnUnauthenticated: true,
+    redirectPath: "/",
+  });
   const [, setLocation] = useLocation();
+
   const dashboardQuery = trpc.dashboard.getOverview.useQuery();
-  const { data: overview, isLoading, isError } = dashboardQuery;
+  const onboardingStatusQuery = trpc.onboarding.status.useQuery(undefined, {
+    retry: false,
+  });
+  const { data: overview, isLoading } = dashboardQuery;
+  const needsOnboarding = onboardingStatusQuery.data?.needsOnboarding;
 
-  return <DashboardLayout>{isLoading ? <DashboardSkeleton /> : isError ? <div className="mx-auto max-w-2xl"><Card className="rounded-2xl border-destructive/30"><CardContent className="pt-6"><p className="text-sm text-destructive">We could not load your overview right now. Please refresh and try again.</p></CardContent></Card></div> : <div className="mx-auto max-w-6xl space-y-7"><section className="relative overflow-hidden rounded-[2rem] border border-border/60 bg-[#304333] text-[#f7eddc]"><img src={REFORGE_ASSETS.hero} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" /><div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(48,67,51,.97),rgba(48,67,51,.62),rgba(48,67,51,.18))]" /><div className="absolute -right-14 -top-20 h-64 w-64 rounded-full bg-amber-200/10 blur-3xl" /><div className="absolute bottom-0 left-1/3 h-32 w-72 rounded-full bg-[#b56b42]/15 blur-3xl" /><div className="relative flex flex-col gap-5 p-7 sm:p-10 lg:flex-row lg:items-end lg:justify-between"><div className="max-w-2xl space-y-3"><p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-200"><Sparkles className="h-4 w-4" /> Your whole-life view</p><h1 className="font-serif text-4xl leading-tight sm:text-5xl">Welcome back, {overview?.profile?.displayName || "Friend"}.</h1><p className="text-sm leading-7 text-white/75 sm:text-base">You are on day {overview?.streak?.current || 0} of your journey. Keep the thread visible, one honest practice at a time.</p></div><Button onClick={() => setLocation("/check-in")} className="w-full rounded-full bg-[#f7eddc] text-[#304333] hover:bg-white sm:w-auto">Open today’s check-in</Button></div></section><div className="grid gap-6 lg:grid-cols-[1.7fr_1fr]"><Card className="rounded-2xl border-border/70 bg-card/85 shadow-none"><CardHeader><CardTitle className="font-serif text-2xl">Your rhythm so far</CardTitle><CardDescription>Consistency is built from returns, not perfect days.</CardDescription></CardHeader><CardContent className="space-y-5"><div><div className="mb-2 flex justify-between text-sm"><span>Current streak</span><span className="font-semibold text-primary">{overview?.streak?.current || 0} days</span></div><Progress value={Math.min((overview?.streak?.current || 0) * 5, 100)} /></div><div><div className="mb-2 flex justify-between text-sm"><span>Longest streak</span><span className="font-semibold">{overview?.streak?.longest || 0} days</span></div><Progress value={Math.min((overview?.streak?.longest || 0) * 5, 100)} /></div></CardContent></Card><Card className="rounded-2xl border-border/70 bg-card/85 shadow-none"><CardHeader><CardTitle className="font-serif text-2xl">Today’s check-in</CardTitle><CardDescription>Make a small pause before the day asks things of you.</CardDescription></CardHeader><CardContent className="space-y-3 text-sm">{overview?.todayCheckIns?.morning ? <p className="flex items-center gap-2"><span className="text-primary">✓</span> Morning complete</p> : <Button variant="outline" className="w-full rounded-full" onClick={() => setLocation("/check-in")}>Begin morning</Button>}{overview?.todayCheckIns?.evening ? <p className="flex items-center gap-2"><span className="text-primary">✓</span> Evening complete</p> : <Button variant="outline" className="w-full rounded-full" onClick={() => setLocation("/check-in")}>Begin evening</Button>}</CardContent></Card></div><Card className="rounded-2xl border-border/70 bg-card/85 shadow-none"><CardHeader><CardTitle className="flex items-center gap-2 font-serif text-2xl"><TrendingUp className="h-5 w-5 text-primary" /> Life dimensions progress</CardTitle><CardDescription>Your progress across all 21 dimensions of whole-life wellness.</CardDescription></CardHeader><CardContent><div className="grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">{overview?.dimensionScores?.map((dimension) => <div key={dimension.dimensionId} className="space-y-2"><div className="flex items-start justify-between gap-3"><span className="text-sm leading-5">{dimension.dimensionLabel}</span><span className="text-sm font-semibold text-primary">{dimension.score}%</span></div><Progress value={dimension.score} /></div>)}</div>{!overview?.dimensionScores?.length && <p className="text-sm text-muted-foreground">Your 21-dimension map will appear here after onboarding.</p>}<Button variant="outline" className="mt-6 w-full rounded-full" onClick={() => setLocation("/progress")}>Open the full progress view</Button></CardContent></Card><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><QuickAction icon={BookOpen} title="Private journal" description="Reflect without performing." path="/journal" onClick={setLocation} /><QuickAction icon={Target} title="Goals" description={`${overview?.activeGoals?.length || 0} active goals`} path="/goals" onClick={setLocation} /><QuickAction icon={Music} title="Music reset" description="Healing through sound." path="/music" onClick={setLocation} /><QuickAction icon={Heart} title="Guides" description="Context for the next step." path="/guides" onClick={setLocation} /></div>{overview?.activeGoals?.length ? <Card className="rounded-2xl border-border/70 bg-card/80 shadow-none"><CardHeader><CardTitle className="font-serif text-2xl">Active goals</CardTitle><CardDescription>Small enough to return to, meaningful enough to matter.</CardDescription></CardHeader><CardContent className="space-y-3">{overview.activeGoals.map((goal) => <div key={goal.id} className="flex items-center justify-between gap-4 rounded-2xl border border-border/60 bg-muted/25 p-4"><div><h3 className="font-serif text-xl">{goal.title}</h3><p className="text-sm text-muted-foreground">{goal.horizon}-day goal</p></div><Button variant="outline" size="sm" className="rounded-full" onClick={() => setLocation("/goals")}>View</Button></div>)}</CardContent></Card> : null}</div>}</DashboardLayout>;
-}
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <nav className="bg-white border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="text-2xl font-bold">
+              Re<span className="text-amber-600">Forge</span>
+            </div>
+            <Skeleton className="h-10 w-20" />
+          </div>
+        </nav>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <Skeleton className="h-64 w-full mb-8" />
+        </div>
+      </div>
+    );
+  }
 
-function QuickAction({ icon: Icon, title, description, path, onClick }: { icon: typeof BookOpen; title: string; description: string; path: string; onClick: (path: string) => void }) {
-  return <button type="button" onClick={() => onClick(path)} className="group rounded-2xl border border-border/70 bg-card/80 p-5 text-left shadow-none transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_18px_45px_-30px_rgba(48,67,51,.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Icon className="mb-4 h-7 w-7 text-primary transition-transform group-hover:scale-105" /><p className="font-serif text-xl">{title}</p><p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p></button>;
+  const handleLogout = async () => {
+    await logout();
+    setLocation("/");
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Navigation */}
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="text-2xl font-bold">
+            Re<span className="text-amber-600">Forge</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-slate-600">
+              {user?.name || user?.email}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/settings")}
+              className="gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="gap-2 text-red-600 hover:text-red-700"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {needsOnboarding && (
+          <div className="mb-8 rounded-2xl bg-amber-50 border border-amber-200 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="font-semibold text-amber-900">
+                Let's build your map
+              </h2>
+              <p className="text-sm text-amber-800">
+                A ten-minute conversation creates your starting scores across
+                the 21 dimensions. You can finish it later.
+              </p>
+            </div>
+            <Button onClick={() => setLocation("/onboarding")}>
+              Start onboarding
+            </Button>
+          </div>
+        )}
+
+        {/* Welcome & Streak */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>
+                Welcome back, {overview?.profile?.displayName || "Friend"}!
+              </CardTitle>
+              <CardDescription>
+                You're on day {overview?.streak?.current || 0} of your journey
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm font-medium">Current Streak</span>
+                    <span className="text-sm font-bold text-amber-600">
+                      {overview?.streak?.current || 0} days
+                    </span>
+                  </div>
+                  <Progress
+                    value={(overview?.streak?.current || 0) * 5}
+                    className="h-2"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm font-medium">Longest Streak</span>
+                    <span className="text-sm font-bold">
+                      {overview?.streak?.longest || 0} days
+                    </span>
+                  </div>
+                  <Progress
+                    value={(overview?.streak?.longest || 0) * 5}
+                    className="h-2"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Today's Check-In</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {overview?.todayCheckIns?.morning ? (
+                <div className="text-sm">
+                  <span className="font-medium">Morning:</span> ✓ Complete
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setLocation("/check-in")}
+                >
+                  Morning Check-In
+                </Button>
+              )}
+              {overview?.todayCheckIns?.evening ? (
+                <div className="text-sm">
+                  <span className="font-medium">Evening:</span> ✓ Complete
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setLocation("/check-in")}
+                >
+                  Evening Check-In
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Dimension Scores */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Life Dimensions Progress
+            </CardTitle>
+            <CardDescription>
+              Your progress across all 21 dimensions of whole-life wellness
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-3 gap-4">
+              {(overview?.dimensionScores ?? []).map(dim => (
+                <div key={dim.dimensionId} className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium truncate pr-2">
+                      {dim.dimensionLabel}
+                    </span>
+                    <span className="text-sm font-bold text-amber-600">
+                      {dim.score}%
+                    </span>
+                  </div>
+                  <Progress value={dim.score} className="h-2" />
+                </div>
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              className="w-full mt-6"
+              onClick={() => setLocation("/progress")}
+            >
+              View All Dimensions & History
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <div className="grid md:grid-cols-3 gap-4">
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation("/check-in")}
+          >
+            <CardHeader>
+              <Smile className="h-8 w-8 text-amber-600 mb-2" />
+              <CardTitle className="text-base">Check-In</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600">Today's reflection</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation("/check-ins")}
+          >
+            <CardHeader>
+              <Flame className="h-8 w-8 text-amber-600 mb-2" />
+              <CardTitle className="text-base">History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600">Streaks & milestones</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation("/journal")}
+          >
+            <CardHeader>
+              <BookOpen className="h-8 w-8 text-amber-600 mb-2" />
+              <CardTitle className="text-base">Journal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600">Reflect on your journey</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation("/goals")}
+          >
+            <CardHeader>
+              <Target className="h-8 w-8 text-amber-600 mb-2" />
+              <CardTitle className="text-base">Goals</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600">
+                {overview?.activeGoals?.length || 0} active goals
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation("/rules")}
+          >
+            <CardHeader>
+              <Shield className="h-8 w-8 text-amber-600 mb-2" />
+              <CardTitle className="text-base">Rules</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600">Boundaries & commitments</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation("/music")}
+          >
+            <CardHeader>
+              <Music className="h-8 w-8 text-amber-600 mb-2" />
+              <CardTitle className="text-base">Music</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600">Healing through sound</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation("/guides")}
+          >
+            <CardHeader>
+              <Heart className="h-8 w-8 text-amber-600 mb-2" />
+              <CardTitle className="text-base">Guides</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600">Personalized resources</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setLocation("/devotional")}
+          >
+            <CardHeader>
+              <HeartHandshake className="h-8 w-8 text-amber-600 mb-2" />
+              <CardTitle className="text-base">Devotional</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-slate-600">A moment to ground</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Active Goals Preview */}
+        {overview?.activeGoals && overview.activeGoals.length > 0 && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle>Active Goals</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {overview.activeGoals.map(goal => (
+                  <div
+                    key={goal.id}
+                    className="flex items-start gap-4 p-4 bg-slate-50 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <h4 className="font-medium">{goal.title}</h4>
+                      <p className="text-sm text-slate-600">
+                        {goal.horizon}-day goal
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      View
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
 }

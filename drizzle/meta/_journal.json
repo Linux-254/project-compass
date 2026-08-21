@@ -1,33 +1,12 @@
 {
   "version": "7",
-  "dialect": "mysql",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
-      "when": 1785756943444,
-      "tag": "0000_yellow_baron_strucker",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1785757633402,
-      "tag": "0001_reflective_shooting_star",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1787289413657,
-      "tag": "0002_medical_hitman",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1787289450712,
-      "tag": "0003_curious_mole_man",
+      "version": "7",
+      "when": 1785826232903,
+      "tag": "0000_round_ted_forrester",
       "breakpoints": true
     }
   ]

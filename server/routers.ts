@@ -1,7 +1,12 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import {
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+  router,
+} from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 
@@ -9,7 +14,8 @@ export const appRouter = router({
   system: systemRouter,
 
   auth: router({
-    me: publicProcedure.query((opts) => opts.ctx.user),
+    me: publicProcedure.query(opts => opts.ctx.user),
+    getRoles: protectedProcedure.query(({ ctx }) => ctx.userRoles),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -63,7 +69,12 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        await db.saveAssessmentResponse(ctx.user.id, input.assessmentId, input.dimensionId, input.response);
+        await db.saveAssessmentResponse(
+          ctx.user.id,
+          input.assessmentId,
+          input.dimensionId,
+          input.response
+        );
         return { success: true };
       }),
 
@@ -71,14 +82,22 @@ export const appRouter = router({
       .input(
         z.object({
           assessmentId: z.number(),
-          substanceFocus: z.enum(["alcohol", "nicotine", "marijuana", "codeine", "prescription"]),
-          substanceFrequency: z.enum(["daily", "weekly", "occasional"]).optional(),
+          substanceFocus: z.enum([
+            "alcohol",
+            "nicotine",
+            "marijuana",
+            "codeine",
+            "prescription",
+          ]),
+          substanceFrequency: z
+            .enum(["daily", "weekly", "occasional"])
+            .optional(),
           substanceApproach: z.enum(["quit", "reduce"]).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
         await db.completeAssessment(ctx.user.id, input.assessmentId);
-        await db.savSubstanceFocus(
+        await db.saveSubstanceFocus(
           ctx.user.id,
           input.substanceFocus,
           input.substanceFrequency,
@@ -89,9 +108,38 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    getDimensions: publicProcedure.query(async () => {
-      await db.seedLifeDimensions();
+    getDimensions: publicProcedure.query(async ({ ctx }) => {
       return db.getLifeDimensions();
+    }),
+
+    saveScore: protectedProcedure
+      .input(
+        z.object({
+          dimensionId: z.number(),
+          score: z.number().min(0).max(100),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.saveDimensionScore(
+          ctx.user.id,
+          input.dimensionId,
+          input.score,
+          new Date()
+        );
+        return { success: true };
+      }),
+
+    status: protectedProcedure.query(async ({ ctx }) => {
+      const [profile, substanceFocus] = await Promise.all([
+        db.getOrCreateProfile(ctx.user.id),
+        db.getSubstanceFocus(ctx.user.id),
+      ]);
+      const hasSubstance = Boolean(substanceFocus);
+      return {
+        assessmentStarted: Boolean(substanceFocus),
+        profileComplete: Boolean(profile?.displayName),
+        needsOnboarding: !hasSubstance || !profile?.displayName,
+      };
     }),
   }),
 
@@ -104,8 +152,14 @@ export const appRouter = router({
       const profile = await db.getOrCreateProfile(ctx.user.id);
       const streak = await db.getOrCreateStreak(ctx.user.id);
       const dimensionScores = await db.getLatestDimensionScores(ctx.user.id);
-      const todayMorningCheckIn = await db.getTodayCheckIn(ctx.user.id, "morning");
-      const todayEveningCheckIn = await db.getTodayCheckIn(ctx.user.id, "evening");
+      const todayMorningCheckIn = await db.getTodayCheckIn(
+        ctx.user.id,
+        "morning"
+      );
+      const todayEveningCheckIn = await db.getTodayCheckIn(
+        ctx.user.id,
+        "evening"
+      );
       const activeGoals = await db.getActiveGoals(ctx.user.id);
 
       return {
@@ -123,6 +177,21 @@ export const appRouter = router({
     getDimensionScores: protectedProcedure.query(async ({ ctx }) => {
       return db.getLatestDimensionScores(ctx.user.id);
     }),
+
+    getDimensionHistory: protectedProcedure
+      .input(
+        z.object({
+          dimensionId: z.number(),
+          limit: z.number().default(30),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        return db.getDimensionScoreHistory(
+          ctx.user.id,
+          input.dimensionId,
+          input.limit
+        );
+      }),
   }),
 
   // ============================================================================
@@ -153,9 +222,16 @@ export const appRouter = router({
         if (input.mood) {
           const dimensions = await db.getLifeDimensions();
           // Save mood to mental-health dimension
-          const mentalHealthDim = dimensions.find((d) => d.slug === "mental-health");
+          const mentalHealthDim = dimensions.find(
+            d => d.slug === "mental-health"
+          );
           if (mentalHealthDim) {
-            await db.saveDimensionScore(ctx.user.id, mentalHealthDim.id, input.mood * 10, new Date());
+            await db.saveDimensionScore(
+              ctx.user.id,
+              mentalHealthDim.id,
+              input.mood * 10,
+              new Date()
+            );
           }
         }
 
@@ -166,6 +242,25 @@ export const appRouter = router({
       const morning = await db.getTodayCheckIn(ctx.user.id, "morning");
       const evening = await db.getTodayCheckIn(ctx.user.id, "evening");
       return { morning, evening };
+    }),
+
+    history: protectedProcedure
+      .input(
+        z.object({
+          limit: z.number().default(30),
+          offset: z.number().default(0),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        return db.listCheckIns(ctx.user.id, input.limit, input.offset);
+      }),
+
+    milestones: protectedProcedure.query(async ({ ctx }) => {
+      return db.getMilestones(ctx.user.id);
+    }),
+
+    streak: protectedProcedure.query(async ({ ctx }) => {
+      return db.getOrCreateStreak(ctx.user.id);
     }),
   }),
 
@@ -183,7 +278,12 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        await db.createJournalEntry(ctx.user.id, input.body, input.dimensionId, input.promptId);
+        await db.createJournalEntry(
+          ctx.user.id,
+          input.body,
+          input.dimensionId,
+          input.promptId
+        );
         return { success: true };
       }),
 
@@ -196,6 +296,25 @@ export const appRouter = router({
       )
       .query(async ({ ctx, input }) => {
         return db.getJournalEntries(ctx.user.id, input.limit, input.offset);
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          entryId: z.number(),
+          body: z.string().min(1),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.updateJournalEntry(ctx.user.id, input.entryId, input.body);
+        return { success: true };
+      }),
+
+    remove: protectedProcedure
+      .input(z.object({ entryId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteJournalEntry(ctx.user.id, input.entryId);
+        return { success: true };
       }),
   }),
 
@@ -228,6 +347,10 @@ export const appRouter = router({
       return db.getActiveGoals(ctx.user.id);
     }),
 
+    all: protectedProcedure.query(async ({ ctx }) => {
+      return db.getGoals(ctx.user.id);
+    }),
+
     addStep: protectedProcedure
       .input(
         z.object({
@@ -235,8 +358,40 @@ export const appRouter = router({
           title: z.string().min(1),
         })
       )
-      .mutation(async ({ input }) => {
-        await db.addGoalStep(input.goalId, input.title);
+      .mutation(async ({ ctx, input }) => {
+        await db.addGoalStep(ctx.user.id, input.goalId, input.title);
+        return { success: true };
+      }),
+
+    steps: protectedProcedure
+      .input(z.object({ goalId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getGoalSteps(ctx.user.id, input.goalId);
+      }),
+
+    toggleStep: protectedProcedure
+      .input(z.object({ goalId: z.number(), stepId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.toggleGoalStep(ctx.user.id, input.goalId, input.stepId);
+        return { success: true };
+      }),
+
+    updateStatus: protectedProcedure
+      .input(
+        z.object({
+          goalId: z.number(),
+          status: z.enum(["active", "completed", "abandoned"]),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.updateGoalStatus(ctx.user.id, input.goalId, input.status);
+        return { success: true };
+      }),
+
+    remove: protectedProcedure
+      .input(z.object({ goalId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteGoal(ctx.user.id, input.goalId);
         return { success: true };
       }),
   }),
@@ -261,6 +416,33 @@ export const appRouter = router({
     list: protectedProcedure.query(async ({ ctx }) => {
       return db.getActiveRules(ctx.user.id);
     }),
+
+    all: protectedProcedure.query(async ({ ctx }) => {
+      return db.getRules(ctx.user.id);
+    }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          ruleId: z.number(),
+          text: z.string().optional(),
+          active: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.updateRule(ctx.user.id, input.ruleId, {
+          text: input.text,
+          active: input.active,
+        });
+        return { success: true };
+      }),
+
+    remove: protectedProcedure
+      .input(z.object({ ruleId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteRule(ctx.user.id, input.ruleId);
+        return { success: true };
+      }),
   }),
 
   // ============================================================================
@@ -283,6 +465,28 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         return db.updateMusicProfile(ctx.user.id, input);
       }),
+
+    createPlaylist: protectedProcedure
+      .input(
+        z.object({
+          title: z.string().min(1),
+          context: z.string().optional(),
+          tracks: z.array(z.any()).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.createPlaylist(
+          ctx.user.id,
+          input.title,
+          input.context,
+          input.tracks
+        );
+        return { success: true };
+      }),
+
+    getPlaylists: protectedProcedure.query(async ({ ctx }) => {
+      return db.getPlaylists(ctx.user.id);
+    }),
   }),
 
   // ============================================================================
@@ -295,27 +499,85 @@ export const appRouter = router({
         z.object({
           email: z.string().email(),
           source: z.string().optional(),
-          sendTypes: z
-            .array(z.enum(["daily", "weekly", "milestone", "dimension", "situation"]))
-            .min(1)
-            .default(["daily", "weekly"]),
         })
       )
       .mutation(async ({ input }) => {
-        return db.subscribeToNewsletter(input.email, undefined, input.source, input.sendTypes);
-      }),
-
-    confirm: publicProcedure
-      .input(z.object({ token: z.string().min(16) }))
-      .mutation(async ({ input }) => {
-        const confirmed = await db.confirmNewsletterSubscription(input.token);
-        return { confirmed };
+        await db.subscribeToNewsletter(input.email, undefined, input.source);
+        return { success: true };
       }),
 
     unsubscribe: publicProcedure
       .input(z.object({ email: z.string().email() }))
       .mutation(async ({ ctx, input }) => {
         await db.unsubscribeFromNewsletter(input.email);
+        return { success: true };
+      }),
+
+    getStatus: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user.email) return undefined;
+      const sub = await db.getSubscriptionByEmail(ctx.user.email);
+      if (sub) return sub;
+      return { email: ctx.user.email, status: "unsubscribed", preferences: {} };
+    }),
+
+    updatePreferences: protectedProcedure
+      .input(
+        z.object({
+          preferences: z.record(z.string(), z.unknown()),
+          subscribe: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user.email) return { success: false };
+        if (input.subscribe === true) {
+          await db.subscribeToNewsletter(
+            ctx.user.email,
+            ctx.user.id,
+            "account"
+          );
+        } else if (input.subscribe === false) {
+          await db.unsubscribeFromNewsletter(ctx.user.email);
+        }
+        await db.updateSubscriptionPreferences(
+          ctx.user.email,
+          input.preferences
+        );
+        return { success: true };
+      }),
+
+    getIssues: protectedProcedure
+      .input(
+        z.object({
+          limit: z.number().default(20),
+          offset: z.number().default(0),
+        })
+      )
+      .query(async ({ input }) => {
+        return db.listNewsletterIssues(input.limit, input.offset);
+      }),
+
+    createIssue: adminProcedure
+      .input(
+        z.object({
+          type: z.enum([
+            "daily",
+            "weekly",
+            "milestone",
+            "dimension",
+            "situation",
+          ]),
+          subject: z.string().min(1),
+          body: z.string().min(1),
+          scheduledFor: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await db.createNewsletterIssue(
+          input.type,
+          input.subject,
+          input.body,
+          input.scheduledFor ? new Date(input.scheduledFor) : undefined
+        );
         return { success: true };
       }),
   }),
@@ -335,6 +597,34 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         return db.getResourcesByDimension(input.dimensionId, input.type);
       }),
+
+    getByType: publicProcedure
+      .input(
+        z.object({
+          type: z.string(),
+          limit: z.number().default(20),
+        })
+      )
+      .query(async ({ input }) => {
+        return db.getResourcesByType(input.type, input.limit);
+      }),
+
+    getById: publicProcedure
+      .input(z.object({ resourceId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getResourceById(input.resourceId);
+      }),
+  }),
+
+  devotional: router({
+    today: protectedProcedure.query(async ({ ctx }) => {
+      const devotionals = await db.getResourcesByType("devotional");
+      if (devotionals.length === 0) return undefined;
+
+      const day = Math.floor(Date.now() / 86_400_000);
+      const index = day % devotionals.length;
+      return devotionals[index];
+    }),
   }),
 
   // ============================================================================
@@ -358,6 +648,53 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         return db.updateUserPreferences(ctx.user.id, input);
+      }),
+  }),
+
+  // ============================================================================
+  // ADMIN (RBAC)
+  // ============================================================================
+
+  admin: router({
+    listUsers: adminProcedure
+      .input(
+        z.object({
+          limit: z.number().default(50),
+          offset: z.number().default(0),
+        })
+      )
+      .query(async ({ input }) => {
+        return db.listUsers(input.limit, input.offset);
+      }),
+
+    getUserRoles: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getUserRoles(input.userId);
+      }),
+
+    grantRole: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          role: z.enum(["supporter", "mentor", "moderator", "admin"]),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await db.grantUserRole(input.userId, input.role);
+        return { success: true };
+      }),
+
+    revokeRole: adminProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          role: z.enum(["supporter", "mentor", "moderator", "admin"]),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await db.revokeUserRole(input.userId, input.role);
+        return { success: true };
       }),
   }),
 });

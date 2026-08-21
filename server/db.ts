@@ -296,6 +296,30 @@ export async function getOrCreateStreak(userId: number) {
   return streak.length > 0 ? streak[0] : undefined;
 }
 
+export async function getMilestones(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(milestones).where(eq(milestones.userId, userId));
+}
+
+export async function createMilestone(userId: number, title: string, targetDays: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(milestones).values({ userId, title, targetDays });
+}
+
+export async function listCheckIns(userId: number, limit = 30, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select().from(checkIns).where(eq(checkIns.userId, userId)).orderBy(desc(checkIns.createdAt)).limit(limit).offset(offset);
+  return rows.map(row => {
+    const notes = typeof row.payload === "object" && row.payload && "notes" in row.payload
+      ? decryptSensitive(String((row.payload as { notes?: string }).notes ?? ""))
+      : null;
+    return { ...row, payload: notes ? { notes } : row.payload };
+  });
+}
+
 export async function createCheckIn(
   userId: number,
   localDate: string,
@@ -327,7 +351,7 @@ export async function createCheckIn(
     cravings: data.cravings,
     payload,
   });
-  return (result as { insertId?: number }).insertId;
+  return Number((result as { insertId?: number }).insertId ?? 1);
 }
 
 export async function getTodayCheckIn(userId: number, part: "morning" | "evening") {
@@ -385,6 +409,18 @@ export async function getJournalEntries(userId: number, limit = 20, offset = 0) 
   return rows.map((row) => ({ ...row, body: decryptSensitive(row.body) ?? "" }));
 }
 
+export async function deleteJournalEntry(userId: number, entryId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(journalEntries).where(and(eq(journalEntries.id, entryId), eq(journalEntries.userId, userId)));
+}
+
+export async function updateJournalEntry(userId: number, entryId: number, body: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(journalEntries).set({ body: encryptSensitive(body) }).where(and(eq(journalEntries.id, entryId), eq(journalEntries.userId, userId)));
+}
+
 // ============================================================================
 // GOALS
 // ============================================================================
@@ -420,11 +456,47 @@ export async function getActiveGoals(userId: number) {
     .orderBy(desc(goals.createdAt));
 }
 
-export async function addGoalStep(goalId: number, title: string) {
+export async function deleteGoal(userId: number, goalId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(goals).where(and(eq(goals.id, goalId), eq(goals.userId, userId)));
+}
+
+export async function updateGoalStatus(userId: number, goalId: number, status: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(goals).set({ status }).where(and(eq(goals.id, goalId), eq(goals.userId, userId)));
+}
+
+export async function getGoals(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(goals).where(eq(goals.userId, userId));
+}
+
+export async function addGoalStep(userId: number, goalId: number, title: string) {
   const db = await getDb();
   if (!db) return;
 
   await db.insert(goalSteps).values({ goalId, title });
+}
+
+export async function getGoalSteps(userId: number, goalId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(goalSteps).where(eq(goalSteps.goalId, goalId));
+}
+
+export async function toggleGoalStep(userId: number, goalId: number, stepId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  const step = await db.select().from(goalSteps).where(eq(goalSteps.id, stepId)).limit(1);
+  if (step[0]) {
+    const newStatus = !step[0].isCompleted;
+    await db.update(goalSteps).set({ isCompleted: newStatus }).where(eq(goalSteps.id, stepId));
+  }
 }
 
 // ============================================================================
@@ -700,6 +772,99 @@ export async function updateUserPreferences(
 // ============================================================================
 // RESOURCES
 // ============================================================================
+
+export async function getSubscriptionByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(newsletterSubscriptions).where(eq(newsletterSubscriptions.email, email)).limit(1);
+  return result[0];
+}
+
+export async function updateSubscriptionPreferences(email: string, prefs: Record<string, unknown>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(newsletterSubscriptions).set({ sendTypes: JSON.stringify(prefs) }).where(eq(newsletterSubscriptions.email, email));
+}
+
+export async function listNewsletterIssues(limit = 20, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(newsletterIssues).orderBy(desc(newsletterIssues.createdAt)).limit(limit).offset(offset);
+}
+
+export async function createNewsletterIssue(type: string, subject: string, body: string, scheduledFor?: Date) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(newsletterIssues).values({ sendType: type, subject, body, scheduledFor });
+}
+
+export async function getResourcesByType(type: string, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(resources).where(eq(resources.type, type)).limit(limit);
+}
+
+export async function getResourceById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const res = await db.select().from(resources).where(eq(resources.id, id)).limit(1);
+  return res[0];
+}
+
+export async function listUsers(limit = 50, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(users).limit(limit).offset(offset);
+}
+
+export async function getUserRoles(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const u = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  return u[0] ? [u[0].role] : ["user"];
+}
+
+export async function grantUserRole(userId: number, role: "user" | "admin" | "supporter" | "mentor" | "moderator") {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ role: role === "admin" ? "admin" : "user" }).where(eq(users.id, userId));
+}
+
+export async function revokeUserRole(userId: number, role: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ role: "user" }).where(eq(users.id, userId));
+}
+
+export async function getRules(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(rules).where(eq(rules.userId, userId));
+}
+
+export async function updateRule(userId: number, ruleId: number, data: { text?: string; isCompleted?: boolean; reviewCadence?: string }) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(rules).set(data).where(and(eq(rules.id, ruleId), eq(rules.userId, userId)));
+}
+
+export async function deleteRule(userId: number, ruleId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(rules).where(and(eq(rules.id, ruleId), eq(rules.userId, userId)));
+}
+
+export async function getPlaylists(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(playlists).where(eq(playlists.userId, userId));
+}
+
+export async function createPlaylist(userId: number, name: string, description?: string, safeGenres?: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(playlists).values({ userId, name, description, safeGenres });
+}
 
 export async function getResourcesByDimension(dimensionId: number, type?: string) {
   const db = await getDb();

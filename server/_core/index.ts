@@ -1,5 +1,8 @@
 import "dotenv/config";
 import express from "express";
+import helmet from "helmet";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -8,6 +11,32 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { ENV } from "./env";
+
+const corsOrigins = (ENV.corsOrigins || "")
+  .split(",")
+  .map(origin => origin.trim())
+  .filter(Boolean);
+
+const globalApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: { json: { message: "Too many requests, please slow down." } },
+  },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: { json: { message: "Too many auth attempts, please wait." } },
+  },
+});
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -28,56 +57,27 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
-type RateBucket = { windowStart: number; count: number };
-const rateBuckets = new Map<string, RateBucket>();
-const RATE_WINDOW_MS = 60_000;
-const RATE_LIMIT = 120;
-
-function applySecurityMiddleware(app: express.Express) {
-  app.disable("x-powered-by");
-  app.use((_req, res, next) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-    next();
-  });
-  app.use("/api/trpc", (req, res, next) => {
-    const origin = req.get("origin");
-    if (origin) {
-      try {
-        if (new URL(origin).host !== req.get("host")) {
-          return res.status(403).json({ error: "Cross-origin request blocked" });
-        }
-      } catch {
-        return res.status(400).json({ error: "Invalid request origin" });
-      }
-    }
-
-    const forwardedFor = req.get("x-forwarded-for")?.split(",")[0]?.trim();
-    const key = forwardedFor || req.ip || "unknown";
-    const now = Date.now();
-    const bucket = rateBuckets.get(key);
-    if (!bucket || now - bucket.windowStart >= RATE_WINDOW_MS) {
-      rateBuckets.set(key, { windowStart: now, count: 1 });
-    } else {
-      bucket.count += 1;
-      if (bucket.count > RATE_LIMIT) {
-        res.setHeader("Retry-After", "60");
-        return res.status(429).json({ error: "Too many requests" });
-      }
-    }
-    next();
-  });
-}
-
 async function startServer() {
   const app = express();
   const server = createServer(app);
-  applySecurityMiddleware(app);
-  // Configure body parser with a conservative size limit for interactive API requests.
-  app.use(express.json({ limit: "1mb" }));
-  app.use(express.urlencoded({ limit: "1mb", extended: true }));
+
+  app.set("trust proxy", 1);
+
+  app.use(helmet({ contentSecurityPolicy: false }));
+  app.use(
+    cors({
+      origin: corsOrigins.length > 0 ? corsOrigins : true,
+      credentials: true,
+    })
+  );
+
+  // Configure body parser with larger size limit for file uploads
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  app.use("/api/oauth", authLimiter);
+  app.use("/api", globalApiLimiter);
+
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   // tRPC API

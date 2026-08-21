@@ -1,12 +1,30 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import Home from "@/pages/Home";
-import SignInPage from "@/pages/SignIn";
+import SiteHome from "@/pages/site/Home";
+import About from "@/pages/site/About";
+import HowItWorks from "@/pages/site/HowItWorks";
+import Dimensions from "@/pages/site/Dimensions";
+import DailyPractice from "@/pages/site/DailyPractice";
+import Success from "@/pages/site/Success";
+import Faq from "@/pages/site/Faq";
+import Supporters from "@/pages/site/Supporters";
+import Contact from "@/pages/site/Contact";
+import Privacy from "@/pages/site/Privacy";
+import Terms from "@/pages/site/Terms";
 import Dashboard from "@/pages/Dashboard";
-import CheckIn from "@/pages/CheckIn";
-import { GoalsPage, GuidesPage, JournalPage, MusicPage, OnboardingPage, ProgressPage, SettingsPage } from "@/pages/RecoveryWorkspace";
-import { NewsletterPage, RulesPage } from "@/pages/AdditionalFeatures";
+import Onboarding from "@/pages/Onboarding";
+import Progress from "@/pages/Progress";
+import CheckInHistory from "@/pages/CheckInHistory";
+import Journal from "@/pages/Journal";
+import Rules from "@/pages/Rules";
+import Goals from "@/pages/Goals";
+import Guides from "@/pages/Guides";
+import Music from "@/pages/Music";
+import Devotional from "@/pages/Devotional";
+import Newsletter from "@/pages/Newsletter";
+import Settings from "@/pages/Settings";
+import Admin from "@/pages/Admin";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -14,19 +32,30 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/sign-in"} component={SignInPage} />
+      <Route path={"/"} component={SiteHome} />
+      <Route path={"/about"} component={About} />
+      <Route path={"/how-it-works"} component={HowItWorks} />
+      <Route path={"/dimensions"} component={Dimensions} />
+      <Route path={"/daily-practice"} component={DailyPractice} />
+      <Route path={"/success"} component={Success} />
+      <Route path={"/faq"} component={Faq} />
+      <Route path={"/supporters"} component={Supporters} />
+      <Route path={"/contact"} component={Contact} />
+      <Route path={"/privacy"} component={Privacy} />
+      <Route path={"/terms"} component={Terms} />
       <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/check-in"} component={CheckIn} />
-      <Route path={"/onboarding"} component={OnboardingPage} />
-      <Route path={"/progress"} component={ProgressPage} />
-      <Route path={"/journal"} component={JournalPage} />
-      <Route path={"/goals"} component={GoalsPage} />
-      <Route path={"/rules"} component={RulesPage} />
-      <Route path={"/music"} component={MusicPage} />
-      <Route path={"/guides"} component={GuidesPage} />
-      <Route path={"/settings"} component={SettingsPage} />
-      <Route path={"/newsletter"} component={NewsletterPage} />
+      <Route path={"/progress"} component={Progress} />
+      <Route path={"/check-ins"} component={CheckInHistory} />
+      <Route path={"/journal"} component={Journal} />
+      <Route path={"/rules"} component={Rules} />
+      <Route path={"/goals"} component={Goals} />
+      <Route path={"/guides"} component={Guides} />
+      <Route path={"/music"} component={Music} />
+      <Route path={"/devotional"} component={Devotional} />
+      <Route path={"/newsletter"} component={Newsletter} />
+      <Route path={"/settings"} component={Settings} />
+      <Route path={"/admin"} component={Admin} />
+      <Route path={"/onboarding"} component={Onboarding} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
@@ -37,7 +66,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light" switchable>
+      <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
           <Router />
