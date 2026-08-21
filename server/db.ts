@@ -882,3 +882,34 @@ export async function getResourcesByDimension(dimensionId: number, type?: string
 
   return query.orderBy(desc(resources.publishedAt));
 }
+export async function getSubstanceFocus(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const res = await db.select().from(substanceFocus).where(eq(substanceFocus.userId, userId)).limit(1);
+  return res[0];
+}
+
+export async function saveSubstanceFocus(userId: number, focusData: { primarySubstance: string; secondarySubstances?: string[]; notes?: string }) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await getSubstanceFocus(userId);
+  if (existing) {
+    await db.update(substanceFocus).set({
+      primarySubstance: focusData.primarySubstance,
+      secondarySubstances: focusData.secondarySubstances ? JSON.stringify(focusData.secondarySubstances) : null,
+      notes: focusData.notes,
+    }).where(eq(substanceFocus.userId, userId));
+  } else {
+    await db.insert(substanceFocus).values({
+      userId,
+      primarySubstance: focusData.primarySubstance,
+      secondarySubstances: focusData.secondarySubstances ? JSON.stringify(focusData.secondarySubstances) : null,
+      notes: focusData.notes,
+    });
+  }
+}
+export async function getDimensionScoreHistory(userId: number, dimensionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(dimensionScores).where(and(eq(dimensionScores.userId, userId), eq(dimensionScores.dimensionId, dimensionId))).orderBy(desc(dimensionScores.recordedAt)).limit(30);
+}

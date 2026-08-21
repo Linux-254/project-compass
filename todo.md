@@ -222,3 +222,4 @@
 - [x] UI component library setup
 - [x] Tailwind CSS configuration
 - [x] TypeScript setup
+- [ ] Fix TRPCClientError: db.getSubstanceFocus is not a function on the dashboard route
