@@ -232,3 +232,4 @@
 - [ ] Validate the redesign with type checks, tests, production build, and screenshots
 - [ ] Reconcile PostgreSQL schema fields with backend helpers and tRPC client contracts so the full-stack build compiles cleanly
 - [ ] Finish nature-led redesign for dashboard, settings, newsletter, and onboarding routes
+- [ ] Diagnose and repair OAuth callback failure in server/_core/oauth.ts or session cookie configuration
