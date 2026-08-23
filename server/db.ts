@@ -998,6 +998,41 @@ export async function listSupporterLinks(supporterId: number) {
     .orderBy(desc(supporterLinks.createdAt));
 }
 
+export async function createSupporterLink(
+  supporterId: number,
+  memberId: number,
+  consentScope: "dashboard_only" | "dashboard_and_journal" | "full_access" = "dashboard_only",
+) {
+  const db = await getDb();
+  if (!db || supporterId === memberId) return undefined;
+
+  const member = await db.select({ id: users.id }).from(users).where(eq(users.id, memberId)).limit(1);
+  if (!member[0]) return undefined;
+
+  const existing = await db
+    .select({ id: supporterLinks.id, status: supporterLinks.status })
+    .from(supporterLinks)
+    .where(and(eq(supporterLinks.supporterId, supporterId), eq(supporterLinks.memberId, memberId)))
+    .orderBy(desc(supporterLinks.createdAt))
+    .limit(1);
+  if (existing[0] && (existing[0].status === "active" || existing[0].status === "pending")) return undefined;
+
+  const liveKey = `${supporterId}:${memberId}`;
+  try {
+    // TiDB/MySQL does not provide PostgreSQL RETURNING semantics; select by the
+    // unique live key after insert so the persisted row is returned reliably.
+    await db.insert(supporterLinks).values({ supporterId, memberId, consentScope, status: "pending", liveKey });
+    const [created] = await db.select().from(supporterLinks).where(eq(supporterLinks.liveKey, liveKey)).limit(1);
+    return created;
+  } catch (error) {
+    // The nullable unique live key turns concurrent pending/active requests into a safe no-op.
+    if (error instanceof Error && /supporter_links_live_pair_idx|duplicate key|unique constraint/i.test(error.message)) {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
 export async function getActiveSupporterLink(supporterId: number, memberId: number) {
   const db = await getDb();
   if (!db) return null;
@@ -1033,7 +1068,7 @@ export async function revokeSupporterLink(linkId: number, supporterId: number) {
 
   await db
     .update(supporterLinks)
-    .set({ status: "revoked", revokedAt: new Date(), updatedAt: new Date() })
+    .set({ status: "revoked", liveKey: null, revokedAt: new Date(), updatedAt: new Date() })
     .where(eq(supporterLinks.id, linkId));
   return true;
 }

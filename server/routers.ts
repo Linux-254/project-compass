@@ -732,6 +732,25 @@ export const appRouter = router({
       return links;
     }),
 
+    createLink: protectedProcedure
+      .input(z.object({
+        memberId: z.number().int().positive(),
+        consentScope: z.enum(["dashboard_only", "dashboard_and_journal", "full_access"]).default("dashboard_only"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.userRoles.includes("supporter") && !ctx.userRoles.includes("admin")) {
+          await db.recordAdminAudit({ actorUserId: ctx.user.id, action: "supporter.link.create", targetType: "member", targetId: input.memberId, outcome: "rejected" });
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const created = await db.createSupporterLink(ctx.user.id, input.memberId, input.consentScope);
+        if (!created) {
+          await db.recordAdminAudit({ actorUserId: ctx.user.id, action: "supporter.link.create", targetType: "member", targetId: input.memberId, outcome: "rejected" });
+          throw new TRPCError({ code: "CONFLICT", message: "Member is unavailable or already has a pending or active supporter link." });
+        }
+        await db.recordAdminAudit({ actorUserId: ctx.user.id, action: "supporter.link.create", targetType: "member", targetId: input.memberId, outcome: "success" });
+        return created;
+      }),
+
     revokeLink: protectedProcedure
       .input(z.object({ linkId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {

@@ -260,3 +260,7 @@
 - [x] Add successful supporter access-summary procedure coverage and verify its success audit event
 - [x] Add procedure-level success and rejection tests for supporter link listing and revocation audit outcomes
 - [x] Add supporter link-list rejection coverage for a non-supporter caller and rejected audit event
+- [x] Add secure supporter-link creation with explicit consent scope, ownership checks, and pending status
+- [x] Update supporter-link creation to use PostgreSQL-safe returning semantics and add persistence coverage
+- [x] Add a database-level uniqueness or transactional guard against duplicate active or pending supporter links
+- [ ] Add runtime-backed supporter-link persistence verification against the deployed database driver

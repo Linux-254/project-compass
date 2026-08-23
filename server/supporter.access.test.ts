@@ -3,6 +3,7 @@ import type { TrpcContext } from "./_core/context";
 
 const mocks = vi.hoisted(() => ({
   getActiveSupporterLink: vi.fn(),
+  createSupporterLink: vi.fn(),
   listSupporterLinks: vi.fn().mockResolvedValue([{ id: 31, status: "active", consentScope: "dashboard_only" }]),
   revokeSupporterLink: vi.fn(),
   getJournalEntries: vi.fn().mockResolvedValue([{ id: 1, body: "encrypted-safe-test" }]),
@@ -94,6 +95,44 @@ describe("supporter scoped procedures", () => {
     await expect(caller.supporter.journal({ memberId: 21 })).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(mocks.getJournalEntries).not.toHaveBeenCalled();
     expect(mocks.recordAdminAudit).toHaveBeenCalledWith(expect.objectContaining({ outcome: "rejected", targetId: 21 }));
+  });
+
+  it("allows supporter link creation with explicit consent scope and logs success", async () => {
+    mocks.createSupporterLink.mockResolvedValue({ id: 41, supporterId: 12, memberId: 21, consentScope: "dashboard_and_journal", status: "pending" });
+    const caller = appRouter.createCaller(supporterContext());
+
+    await expect(caller.supporter.createLink({ memberId: 21, consentScope: "dashboard_and_journal" })).resolves.toMatchObject({
+      id: 41,
+      status: "pending",
+      consentScope: "dashboard_and_journal",
+    });
+    expect(mocks.createSupporterLink).toHaveBeenCalledWith(12, 21, "dashboard_and_journal");
+    expect(mocks.recordAdminAudit).toHaveBeenCalledWith(expect.objectContaining({
+      action: "supporter.link.create",
+      targetId: 21,
+      outcome: "success",
+    }));
+  });
+
+  it("rejects duplicate or unavailable supporter links and logs rejection", async () => {
+    mocks.createSupporterLink.mockResolvedValue(undefined);
+    const caller = appRouter.createCaller(supporterContext());
+
+    await expect(caller.supporter.createLink({ memberId: 21 })).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(mocks.recordAdminAudit).toHaveBeenCalledWith(expect.objectContaining({
+      action: "supporter.link.create",
+      targetId: 21,
+      outcome: "rejected",
+    }));
+  });
+
+  it("rejects supporter link creation for a non-supporter", async () => {
+    const context = supporterContext();
+    context.userRoles = ["user"];
+    const caller = appRouter.createCaller(context);
+
+    await expect(caller.supporter.createLink({ memberId: 21 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(mocks.createSupporterLink).not.toHaveBeenCalled();
   });
 
   it("allows supporter link revocation and logs success", async () => {

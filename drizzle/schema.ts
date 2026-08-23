@@ -208,6 +208,8 @@ export const supporterLinks = pgTable(
     memberId: integer("memberId").notNull(),
     consentScope: consentScopeEnum("consentScope").default("dashboard_only"),
     status: linkStatusEnum("status").default("pending"),
+    // Null for revoked links so the unique key permits future re-invites.
+    liveKey: varchar("liveKey", { length: 100 }),
     revokedAt: timestamp("revokedAt", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -217,6 +219,7 @@ export const supporterLinks = pgTable(
       table.supporterId
     ),
     memberIdIdx: index("supporter_links_memberId_idx").on(table.memberId),
+    livePairUniqueIdx: uniqueIndex("supporter_links_live_pair_idx").on(table.liveKey),
   })
 );
 
