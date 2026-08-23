@@ -38,6 +38,22 @@ const authLimiter = rateLimit({
   },
 });
 
+export function isSameOriginMetadata(req: express.Request) {
+  const host = req.get("host");
+  if (!host) return false;
+
+  const origin = req.get("origin");
+  const referer = req.get("referer");
+  const candidate = origin || referer;
+  if (!candidate) return false;
+
+  try {
+    return new URL(candidate).host === host;
+  } catch {
+    return false;
+  }
+}
+
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
@@ -66,7 +82,8 @@ async function startServer() {
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(
     cors({
-      origin: corsOrigins.length > 0 ? corsOrigins : true,
+      // Never reflect arbitrary origins when no explicit allowlist is configured.
+      origin: corsOrigins.length > 0 ? corsOrigins : false,
       credentials: true,
     })
   );
@@ -80,6 +97,17 @@ async function startServer() {
 
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+
+  // CSRF defense-in-depth for browser mutations. OAuth callbacks are GET requests
+  // and remain outside this guard; API clients must use the configured same origin.
+  app.use("/api/trpc", (req, res, next) => {
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method) && !isSameOriginMetadata(req)) {
+      res.status(403).json({ error: "Same-origin mutation required." });
+      return;
+    }
+    next();
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",

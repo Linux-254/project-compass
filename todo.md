@@ -15,10 +15,10 @@
 ### Authentication & Security
 - [x] Set up OAuth login flow with Manus auth (template-provided)
 - [x] Add RBAC role fields to schema (user, supporter, mentor, moderator, admin)
-- [ ] Implement role-gated procedure authorization
+- [x] Implement role-gated procedure authorization
 - [ ] Implement supporter consent-scope enforcement
-- [ ] Add rate limiting on auth endpoints
-- [ ] Implement CORS and CSRF protection
+- [x] Add rate limiting on auth endpoints
+- [x] Implement CORS and CSRF protection
 - [x] Add input validation with Zod schemas
 - [x] Create protected and public procedure wrappers
 
@@ -245,3 +245,9 @@
 - [ ] Add practical modern admin affordances and responsive verification
 - [x] Add server-side audit logging for admin role grants/revokes and newsletter create/update/delete actions without sensitive content
 - [x] Add regression tests covering successful and rejected admin audit events
+- [x] Tighten default CORS behavior and enforce same-origin checks on state-changing API requests
+- [x] Reject state-changing tRPC requests when Origin and Referer are absent or invalid
+- [x] Add regression tests for same-origin, cross-origin, and missing-origin mutations
+- [x] Review non-tRPC state-changing endpoints for equivalent origin protection
+- [x] Audit all non-tRPC Express routes and document protections for any state-changing handlers
+- [x] Add a focused route-safety test or checklist proving non-tRPC routes are GET-only or equivalently protected
