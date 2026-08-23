@@ -10,6 +10,7 @@ import Success from "@/pages/site/Success";
 import Faq from "@/pages/site/Faq";
 import Supporters from "@/pages/site/Supporters";
 import Contact from "@/pages/site/Contact";
+import SignIn from "@/pages/site/SignIn";
 import Privacy from "@/pages/site/Privacy";
 import Terms from "@/pages/site/Terms";
 import Dashboard from "@/pages/Dashboard";
@@ -35,6 +36,7 @@ function Router() {
       <Route path={"/faq"} component={Faq} />
       <Route path={"/supporters"} component={Supporters} />
       <Route path={"/contact"} component={Contact} />
+      <Route path={"/sign-in"} component={SignIn} />
       <Route path={"/privacy"} component={Privacy} />
       <Route path={"/terms"} component={Terms} />
       <Route path={"/dashboard"} component={Dashboard} />

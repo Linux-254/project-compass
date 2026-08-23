@@ -264,3 +264,4 @@
 - [x] Update supporter-link creation to use PostgreSQL-safe returning semantics and add persistence coverage
 - [x] Add a database-level uniqueness or transactional guard against duplicate active or pending supporter links
 - [ ] Add runtime-backed supporter-link persistence verification against the deployed database driver
+- [x] Add dedicated restorative sign-in route with accessible OAuth entry and home escape link
