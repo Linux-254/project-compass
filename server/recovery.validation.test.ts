@@ -18,6 +18,7 @@ function createContext(): TrpcContext {
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
     res: { clearCookie: () => undefined } as TrpcContext["res"],
+    userRoles: [],
   };
 }
 
@@ -28,6 +29,16 @@ describe("sensitive recovery content", () => {
     expect(encrypted).not.toContain(original);
     expect(encrypted.startsWith("enc:v1:")).toBe(true);
     expect(decryptSensitive(encrypted)).toBe(original);
+  });
+});
+
+describe("admin authorization safeguards", () => {
+  it("prevents an administrator from revoking their own administrator access", async () => {
+    const context = createContext();
+    context.user = { ...context.user!, role: "admin" };
+    context.userRoles = ["admin"];
+    const caller = appRouter.createCaller(context);
+    await expect(caller.admin.revokeRole({ userId: 42, role: "admin" })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
 

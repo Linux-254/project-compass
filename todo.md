@@ -238,3 +238,10 @@
 - [x] Add smooth CSS fade-in and fade-out keyframes for the OAuth loading overlay
 - [x] Introduce burnt-wood typography tokens (e.g. text-[oklch(0.38_0.07_52)]) for nature-led headings
 - [x] Redesign the admin dashboard with glassmorphic cards, RBAC-aware user-to-admin navigation, role grant/revoke controls, and newsletter issue CRUD operations
+- [x] Add admin user and newsletter search/filter controls
+- [x] Add glassmorphic confirmation modal for destructive admin actions
+- [x] Add nature-toned toast notifications for admin CRUD feedback
+- [x] Fortify admin authorization, mutation validation, and safe audit behavior
+- [ ] Add practical modern admin affordances and responsive verification
+- [x] Add server-side audit logging for admin role grants/revokes and newsletter create/update/delete actions without sensitive content
+- [x] Add regression tests covering successful and rejected admin audit events

@@ -8,6 +8,7 @@ import {
   router,
 } from "./_core/trpc";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 
 export const appRouter = router({
@@ -289,8 +290,8 @@ export const appRouter = router({
     list: protectedProcedure
       .input(
         z.object({
-          limit: z.number().default(20),
-          offset: z.number().default(0),
+          limit: z.number().int().min(1).max(50).default(20),
+          offset: z.number().int().min(0).default(0),
         })
       )
       .query(async ({ ctx, input }) => {
@@ -564,8 +565,8 @@ export const appRouter = router({
     getIssues: protectedProcedure
       .input(
         z.object({
-          limit: z.number().default(20),
-          offset: z.number().default(0),
+          limit: z.number().int().min(1).max(50).default(20),
+          offset: z.number().int().min(0).default(0),
         })
       )
       .query(async ({ input }) => {
@@ -582,34 +583,40 @@ export const appRouter = router({
             "dimension",
             "situation",
           ]),
-          subject: z.string().min(1),
-          body: z.string().min(1),
+          subject: z.string().trim().min(1).max(180),
+          body: z.string().trim().min(1).max(20000),
           scheduledFor: z.string().optional(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         await db.createNewsletterIssue(
           input.type,
           input.subject,
           input.body,
           input.scheduledFor ? new Date(input.scheduledFor) : undefined
         );
+        await db.recordAdminAudit({
+          actorUserId: ctx.user.id,
+          action: "newsletter.issue.create",
+          targetType: "newsletter_issue",
+          outcome: "success",
+        });
         return { success: true };
       }),
 
     updateIssue: adminProcedure
       .input(
         z.object({
-          id: z.number(),
+          id: z.number().int().positive(),
           type: z
             .enum(["daily", "weekly", "milestone", "dimension", "situation"])
             .optional(),
-          subject: z.string().min(1).optional(),
-          body: z.string().min(1).optional(),
+          subject: z.string().trim().min(1).max(180).optional(),
+          body: z.string().trim().min(1).max(20000).optional(),
           scheduledFor: z.string().nullable().optional(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { id, scheduledFor, ...rest } = input;
         await db.updateNewsletterIssue(id, {
           ...rest,
@@ -617,13 +624,27 @@ export const appRouter = router({
             ? {}
             : { scheduledFor: scheduledFor ? new Date(scheduledFor) : null }),
         });
+        await db.recordAdminAudit({
+          actorUserId: ctx.user.id,
+          action: "newsletter.issue.update",
+          targetType: "newsletter_issue",
+          targetId: id,
+          outcome: "success",
+        });
         return { success: true };
       }),
 
     deleteIssue: adminProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
         await db.deleteNewsletterIssue(input.id);
+        await db.recordAdminAudit({
+          actorUserId: ctx.user.id,
+          action: "newsletter.issue.delete",
+          targetType: "newsletter_issue",
+          targetId: input.id,
+          outcome: "success",
+        });
         return { success: true };
       }),
   }),
@@ -705,8 +726,8 @@ export const appRouter = router({
     listUsers: adminProcedure
       .input(
         z.object({
-          limit: z.number().default(50),
-          offset: z.number().default(0),
+          limit: z.number().int().min(1).max(100).default(50),
+          offset: z.number().int().min(0).default(0),
         })
       )
       .query(async ({ input }) => {
@@ -722,24 +743,48 @@ export const appRouter = router({
     grantRole: adminProcedure
       .input(
         z.object({
-          userId: z.number(),
+          userId: z.number().int().positive(),
           role: z.enum(["supporter", "mentor", "moderator", "admin"]),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         await db.grantUserRole(input.userId, input.role);
+        await db.recordAdminAudit({
+          actorUserId: ctx.user.id,
+          action: "user.role.grant",
+          targetType: "user",
+          targetId: input.userId,
+          outcome: "success",
+        });
         return { success: true };
       }),
 
     revokeRole: adminProcedure
       .input(
         z.object({
-          userId: z.number(),
+          userId: z.number().int().positive(),
           role: z.enum(["supporter", "mentor", "moderator", "admin"]),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.id === input.userId && input.role === "admin") {
+          await db.recordAdminAudit({
+            actorUserId: ctx.user.id,
+            action: "user.role.revoke",
+            targetType: "user",
+            targetId: input.userId,
+            outcome: "rejected",
+          });
+          throw new TRPCError({ code: "FORBIDDEN", message: "You cannot revoke your own administrator access." });
+        }
         await db.revokeUserRole(input.userId, input.role);
+        await db.recordAdminAudit({
+          actorUserId: ctx.user.id,
+          action: "user.role.revoke",
+          targetType: "user",
+          targetId: input.userId,
+          outcome: "success",
+        });
         return { success: true };
       }),
   }),

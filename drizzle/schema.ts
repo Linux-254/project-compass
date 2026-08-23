@@ -826,3 +826,27 @@ export const challengeParticipants = pgTable(
 export type ChallengeParticipant = typeof challengeParticipants.$inferSelect;
 export type InsertChallengeParticipant =
   typeof challengeParticipants.$inferInsert;
+
+/**
+ * Non-sensitive audit trail for privileged administrative mutations.
+ * Never store journal, check-in, or newsletter body content here.
+ */
+export const adminAuditLogs = pgTable(
+  "admin_audit_logs",
+  {
+    id: id(),
+    actorUserId: integer("actorUserId").notNull(),
+    action: varchar("action", { length: 64 }).notNull(),
+    targetType: varchar("targetType", { length: 64 }).notNull(),
+    targetId: integer("targetId"),
+    outcome: varchar("outcome", { length: 32 }).notNull(),
+    createdAt: createdAt(),
+  },
+  table => ({
+    actorIdx: index("admin_audit_logs_actor_idx").on(table.actorUserId),
+    actionIdx: index("admin_audit_logs_action_idx").on(table.action),
+    createdAtIdx: index("admin_audit_logs_createdAt_idx").on(table.createdAt),
+  })
+);
+export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;
+export type InsertAdminAuditLog = typeof adminAuditLogs.$inferInsert;

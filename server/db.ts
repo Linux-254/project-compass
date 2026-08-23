@@ -26,6 +26,7 @@ import {
   substanceFocus,
   userPreferences,
   supporterLinks,
+  adminAuditLogs,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -805,6 +806,30 @@ export async function updateSubscriptionPreferences(email: string, prefs: Record
   const db = await getDb();
   if (!db) return;
   await db.update(newsletterSubscriptions).set({ preferences: prefs }).where(eq(newsletterSubscriptions.email, email));
+}
+
+export async function recordAdminAudit(input: {
+  actorUserId: number;
+  action: string;
+  targetType: string;
+  targetId?: number;
+  outcome: "success" | "rejected" | "failed";
+}) {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    await db.insert(adminAuditLogs).values({
+      actorUserId: input.actorUserId,
+      action: input.action,
+      targetType: input.targetType,
+      targetId: input.targetId,
+      outcome: input.outcome,
+    });
+    return true;
+  } catch {
+    // Audit failures must never expose sensitive payloads or break the primary admin flow.
+    return false;
+  }
 }
 
 export async function listNewsletterIssues(limit = 20, offset = 0) {

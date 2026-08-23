@@ -28,6 +28,16 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 const ROLES = ["supporter", "mentor", "moderator", "admin"] as const;
@@ -42,6 +52,15 @@ export default function Admin() {
   const [issueSubject, setIssueSubject] = useState("");
   const [issueBody, setIssueBody] = useState("");
   const [editingIssueId, setEditingIssueId] = useState<number | null>(null);
+  const [userSearch, setUserSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [issueSearch, setIssueSearch] = useState("");
+  const [issueTypeFilter, setIssueTypeFilter] = useState("all");
+  const [pendingDestructive, setPendingDestructive] = useState<
+    | { kind: "deleteIssue"; issueId: number; label: string }
+    | { kind: "revokeRole"; userId: number; role: (typeof ROLES)[number]; label: string }
+    | null
+  >(null);
 
   const rolesQuery = trpc.auth.getRoles.useQuery();
   const usersQuery = trpc.admin.listUsers.useQuery({ limit: 50, offset: 0 });
@@ -50,43 +69,43 @@ export default function Admin() {
 
   const grantMutation = trpc.admin.grantRole.useMutation({
     onSuccess: () => {
-      toast.success("Role successfully granted");
+      toast.success("Role successfully granted", { className: "nature-toast" });
       utils.admin.listUsers.invalidate();
     },
-    onError: () => toast.error("Failed to grant role"),
+    onError: () =>       toast.error("Failed to grant role", { className: "nature-toast nature-toast-error" }),
   });
   const revokeMutation = trpc.admin.revokeRole.useMutation({
     onSuccess: () => {
-      toast.success("Role successfully revoked");
+      toast.success("Role successfully revoked", { className: "nature-toast" });
       utils.admin.listUsers.invalidate();
     },
-    onError: () => toast.error("Failed to revoke role"),
+    onError: () =>       toast.error("Failed to revoke role", { className: "nature-toast nature-toast-error" }),
   });
   const createIssueMutation = trpc.newsletter.createIssue.useMutation({
     onSuccess: () => {
-      toast.success("Newsletter edition published successfully");
+      toast.success("Newsletter edition published successfully", { className: "nature-toast" });
       setIssueSubject("");
       setIssueBody("");
       utils.newsletter.getIssues.invalidate();
     },
-    onError: () => toast.error("Failed to publish newsletter issue"),
+    onError: () =>       toast.error("Failed to publish newsletter issue", { className: "nature-toast nature-toast-error" }),
   });
   const updateIssueMutation = trpc.newsletter.updateIssue.useMutation({
     onSuccess: () => {
-      toast.success("Newsletter edition updated");
+      toast.success("Newsletter edition updated", { className: "nature-toast" });
       setEditingIssueId(null);
       setIssueSubject("");
       setIssueBody("");
       utils.newsletter.getIssues.invalidate();
     },
-    onError: () => toast.error("Failed to update newsletter issue"),
+    onError: () =>       toast.error("Failed to update newsletter issue", { className: "nature-toast nature-toast-error" }),
   });
   const deleteIssueMutation = trpc.newsletter.deleteIssue.useMutation({
     onSuccess: () => {
-      toast.success("Newsletter edition removed");
+      toast.success("Newsletter edition removed", { className: "nature-toast" });
       utils.newsletter.getIssues.invalidate();
     },
-    onError: () => toast.error("Failed to remove newsletter issue"),
+    onError: () =>       toast.error("Failed to remove newsletter issue", { className: "nature-toast nature-toast-error" }),
   });
 
   const isAdmin = rolesQuery.data?.includes("admin") ?? false;
@@ -174,6 +193,29 @@ export default function Admin() {
   }
 
   const users = usersQuery.data ?? [];
+  const issues = issuesQuery.data ?? [];
+  const normalizedUserSearch = userSearch.trim().toLowerCase();
+  const normalizedIssueSearch = issueSearch.trim().toLowerCase();
+  const filteredUsers = users.filter((member) => {
+    const matchesRole = roleFilter === "all" || member.role === roleFilter;
+    const haystack = `${member.name ?? ""} ${member.email ?? ""} ${member.openId}`.toLowerCase();
+    return matchesRole && (!normalizedUserSearch || haystack.includes(normalizedUserSearch));
+  });
+  const filteredIssues = issues.filter((issue) => {
+    const matchesType = issueTypeFilter === "all" || issue.type === issueTypeFilter;
+    const haystack = `${issue.subject} ${issue.body}`.toLowerCase();
+    return matchesType && (!normalizedIssueSearch || haystack.includes(normalizedIssueSearch));
+  });
+
+  const confirmDestructiveAction = () => {
+    if (!pendingDestructive) return;
+    if (pendingDestructive.kind === "deleteIssue") {
+      deleteIssueMutation.mutate({ id: pendingDestructive.issueId });
+    } else {
+      revokeMutation.mutate({ userId: pendingDestructive.userId, role: pendingDestructive.role });
+    }
+    setPendingDestructive(null);
+  };
 
   return (
     <div className="nature-shell min-h-screen pb-16">
@@ -235,13 +277,38 @@ export default function Admin() {
             <CardDescription>
               Grant or revoke administrative and mentoring privileges across registered profiles
             </CardDescription>
+            <div className="mt-5 grid gap-3 md:grid-cols-[1fr_180px_auto]">
+              <div className="relative">
+                <Input
+                  aria-label="Search members"
+                  value={userSearch}
+                  onChange={(event) => setUserSearch(event.target.value)}
+                  placeholder="Search by name, email, or account ID"
+                  className="h-11 rounded-xl bg-background/70 pl-4"
+                />
+              </div>
+              <select
+                aria-label="Filter members by role"
+                value={roleFilter}
+                onChange={(event) => setRoleFilter(event.target.value)}
+                className="h-11 rounded-xl border border-input bg-background/70 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="all">All roles</option>
+                {ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
+              </select>
+              <div className="flex items-center justify-end rounded-xl border border-primary/15 bg-primary/5 px-3 text-xs text-muted-foreground">
+                Showing <span className="mx-1 font-semibold text-foreground">{filteredUsers.length}</span> of {users.length}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {users.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">No accounts discovered in the database.</p>
+            ) : filteredUsers.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-border/70 px-4 py-8 text-center text-sm text-muted-foreground">No members match this search.</p>
             ) : (
               <div className="space-y-3">
-                {users.map(u => (
+                {filteredUsers.map(u => (
                   <div
                     key={u.id}
                     className="group rounded-2xl border border-border/60 bg-card/60 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-card flex flex-col md:flex-row md:items-center justify-between gap-4"
@@ -265,7 +332,12 @@ export default function Admin() {
                             size="sm"
                             onClick={() =>
                               hasRole
-                                ? revokeMutation.mutate({ userId: u.id, role })
+                                ? setPendingDestructive({
+                                    kind: "revokeRole",
+                                    userId: u.id,
+                                    role,
+                                    label: `${role} access for ${u.name || u.email || "this member"}`,
+                                  })
                                 : grantMutation.mutate({ userId: u.id, role })
                             }
                             className={`h-8 text-xs capitalize ${hasRole ? "bg-primary text-primary-foreground" : "border-border hover:border-primary/50"}`}
@@ -368,11 +440,29 @@ export default function Admin() {
                   <p className="text-xs text-muted-foreground">Review, refine, or remove previously published editorial content.</p>
                 </div>
                 <Badge variant="outline" className="border-primary/30 text-primary">
-                  {issuesQuery.data?.length ?? 0} visible
+                  {filteredIssues.length} visible
                 </Badge>
               </div>
+              <div className="mb-4 grid gap-3 md:grid-cols-[1fr_180px]">
+                <Input
+                  aria-label="Search newsletter editions"
+                  value={issueSearch}
+                  onChange={(event) => setIssueSearch(event.target.value)}
+                  placeholder="Search titles and edition copy"
+                  className="h-11 rounded-xl bg-background/70"
+                />
+                <select
+                  aria-label="Filter newsletter editions by type"
+                  value={issueTypeFilter}
+                  onChange={(event) => setIssueTypeFilter(event.target.value)}
+                  className="h-11 rounded-xl border border-input bg-background/70 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="all">All edition types</option>
+                  {['daily', 'weekly', 'milestone', 'dimension', 'situation'].map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </div>
               <div className="space-y-3">
-                {(issuesQuery.data ?? []).map(issue => (
+                {filteredIssues.map(issue => (
                   <div key={issue.id} className="rounded-2xl border border-border/60 bg-background/55 p-4 transition-colors hover:border-primary/35">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 space-y-1">
@@ -401,9 +491,11 @@ export default function Admin() {
                           className="gap-2 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10"
                           disabled={deleteIssueMutation.isPending}
                           onClick={() => {
-                            if (window.confirm("Remove this newsletter edition?")) {
-                              deleteIssueMutation.mutate({ id: issue.id });
-                            }
+                            setPendingDestructive({
+                              kind: "deleteIssue",
+                              issueId: issue.id,
+                              label: issue.subject,
+                            });
                           }}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -423,6 +515,35 @@ export default function Admin() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog
+        open={Boolean(pendingDestructive)}
+        onOpenChange={(open) => {
+          if (!open) setPendingDestructive(null);
+        }}
+      >
+        <AlertDialogContent className="nature-glass border-white/30 shadow-[0_28px_90px_-34px_oklch(0.2_0.04_145/0.65)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="burnt-wood-heading font-serif text-2xl">
+              Take this action carefully
+            </AlertDialogTitle>
+            <AlertDialogDescription className="leading-6">
+              {pendingDestructive?.kind === "deleteIssue"
+                ? `Remove “${pendingDestructive.label}” from the editorial archive? This cannot be undone.`
+                : `Revoke ${pendingDestructive?.label ?? "this access"}? The member will lose this permission immediately.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl border-primary/20 bg-background/60">Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDestructiveAction}
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirm change
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
