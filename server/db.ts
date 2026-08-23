@@ -979,3 +979,61 @@ export async function getDimensionScoreHistory(userId: number, dimensionId: numb
   if (!db) return [];
   return db.select().from(dimensionScores).where(and(eq(dimensionScores.userId, userId), eq(dimensionScores.dimensionId, dimensionId))).orderBy(desc(dimensionScores.capturedOn)).limit(30);
 }
+
+export function supporterScopeAllowsJournal(scope: string | null | undefined) {
+  return scope === "dashboard_and_journal" || scope === "full_access";
+}
+
+export function supporterCanAccessJournal(link: { status: string | null; consentScope: string | null } | null | undefined) {
+  return Boolean(link?.status === "active" && supporterScopeAllowsJournal(link.consentScope));
+}
+
+export async function listSupporterLinks(supporterId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(supporterLinks)
+    .where(eq(supporterLinks.supporterId, supporterId))
+    .orderBy(desc(supporterLinks.createdAt));
+}
+
+export async function getActiveSupporterLink(supporterId: number, memberId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(supporterLinks)
+    .where(
+      and(
+        eq(supporterLinks.supporterId, supporterId),
+        eq(supporterLinks.memberId, memberId),
+        eq(supporterLinks.status, "active"),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function revokeSupporterLink(linkId: number, supporterId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  const existing = await db
+    .select({ id: supporterLinks.id })
+    .from(supporterLinks)
+    .where(
+      and(
+        eq(supporterLinks.id, linkId),
+        eq(supporterLinks.supporterId, supporterId),
+        eq(supporterLinks.status, "active"),
+      ),
+    )
+    .limit(1);
+  if (!existing[0]) return false;
+
+  await db
+    .update(supporterLinks)
+    .set({ status: "revoked", revokedAt: new Date(), updatedAt: new Date() })
+    .where(eq(supporterLinks.id, linkId));
+  return true;
+}

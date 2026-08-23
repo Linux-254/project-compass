@@ -16,7 +16,7 @@
 - [x] Set up OAuth login flow with Manus auth (template-provided)
 - [x] Add RBAC role fields to schema (user, supporter, mentor, moderator, admin)
 - [x] Implement role-gated procedure authorization
-- [ ] Implement supporter consent-scope enforcement
+- [x] Implement supporter consent-scope enforcement
 - [x] Add rate limiting on auth endpoints
 - [x] Implement CORS and CSRF protection
 - [x] Add input validation with Zod schemas
@@ -251,3 +251,12 @@
 - [x] Review non-tRPC state-changing endpoints for equivalent origin protection
 - [x] Audit all non-tRPC Express routes and document protections for any state-changing handlers
 - [x] Add a focused route-safety test or checklist proving non-tRPC routes are GET-only or equivalently protected
+- [x] Implement consent-scoped supporter access with explicit scope checks and access logging
+- [x] Enforce consent scope on the implemented supporter journal member-data procedure
+- [ ] Enforce consent scope on every future supporter-facing member-data procedure
+- [x] Add non-sensitive supporter access logging for link reads, scoped data access, and revocations
+- [x] Add helper-level regression tests for supporter scope and link status
+- [x] Add procedure-level regression tests for supporter journal and access-summary authorization and audit outcomes
+- [x] Add successful supporter access-summary procedure coverage and verify its success audit event
+- [x] Add procedure-level success and rejection tests for supporter link listing and revocation audit outcomes
+- [x] Add supporter link-list rejection coverage for a non-supporter caller and rejected audit event

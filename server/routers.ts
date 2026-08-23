@@ -718,10 +718,76 @@ export const appRouter = router({
       }),
   }),
 
+    // ============================================================================
+  // SUPPORTER ACCESS (CONSENT-SCOPED)
+  // ============================================================================
+  supporter: router({
+    links: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.userRoles.includes("supporter") && !ctx.userRoles.includes("admin")) {
+        await db.recordAdminAudit({ actorUserId: ctx.user.id, action: "supporter.links.list", targetType: "supporter_link", outcome: "rejected" });
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      const links = await db.listSupporterLinks(ctx.user.id);
+      await db.recordAdminAudit({ actorUserId: ctx.user.id, action: "supporter.links.list", targetType: "supporter_link", outcome: "success" });
+      return links;
+    }),
+
+    revokeLink: protectedProcedure
+      .input(z.object({ linkId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.userRoles.includes("supporter") && !ctx.userRoles.includes("admin")) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const revoked = await db.revokeSupporterLink(input.linkId, ctx.user.id);
+        if (!revoked) {
+          await db.recordAdminAudit({ actorUserId: ctx.user.id, action: "supporter.link.revoke", targetType: "supporter_link", targetId: input.linkId, outcome: "rejected" });
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        await db.recordAdminAudit({ actorUserId: ctx.user.id, action: "supporter.link.revoke", targetType: "supporter_link", targetId: input.linkId, outcome: "success" });
+        return { success: true } as const;
+      }),
+
+    accessSummary: protectedProcedure
+      .input(z.object({ memberId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.userRoles.includes("supporter") && !ctx.userRoles.includes("admin")) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const link = await db.getActiveSupporterLink(ctx.user.id, input.memberId);
+        if (!link) {
+          await db.recordAdminAudit({ actorUserId: ctx.user.id, action: "supporter.access.summary", targetType: "member", targetId: input.memberId, outcome: "rejected" });
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        await db.recordAdminAudit({ actorUserId: ctx.user.id, action: "supporter.access.summary", targetType: "member", targetId: input.memberId, outcome: "success" });
+        return {
+          memberId: link.memberId,
+          consentScope: link.consentScope,
+          canViewJournal: link.consentScope !== "dashboard_only",
+          canViewFullAccess: link.consentScope === "full_access",
+        };
+      }),
+
+    journal: protectedProcedure
+      .input(z.object({ memberId: z.number().int().positive(), limit: z.number().int().min(1).max(50).default(20), offset: z.number().int().min(0).default(0) }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.userRoles.includes("supporter") && !ctx.userRoles.includes("admin")) {
+          await db.recordAdminAudit({ actorUserId: ctx.user.id, action: "supporter.access.journal", targetType: "member", targetId: input.memberId, outcome: "rejected" });
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const link = await db.getActiveSupporterLink(ctx.user.id, input.memberId);
+        if (!db.supporterCanAccessJournal(link)) {
+          await db.recordAdminAudit({ actorUserId: ctx.user.id, action: "supporter.access.journal", targetType: "member", targetId: input.memberId, outcome: "rejected" });
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const entries = await db.getJournalEntries(input.memberId, input.limit, input.offset);
+        await db.recordAdminAudit({ actorUserId: ctx.user.id, action: "supporter.access.journal", targetType: "member", targetId: input.memberId, outcome: "success" });
+        return entries;
+      }),
+  }),
+
   // ============================================================================
   // ADMIN (RBAC)
   // ============================================================================
-
   admin: router({
     listUsers: adminProcedure
       .input(
