@@ -1,7 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
-import { startLogin } from "@/const";
 import { Leaf, Menu, ArrowUpRight } from "lucide-react";
 
 const navLinks = [
@@ -37,13 +36,13 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
           </nav>
           <div className="flex items-center gap-1.5 sm:gap-2">
             <ThemeToggle compact />
-            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => startLogin()}>Sign in</Button>
-            <Button size="sm" className="rounded-full px-4" onClick={() => startLogin()}>Start free <ArrowUpRight className="ml-1 h-4 w-4" /></Button>
+            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex"><Link href="/sign-in">Sign in</Link></Button>
+            <Button asChild size="sm" className="rounded-full px-4"><Link href="/sign-in">Start free <ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>
           </div>
         </div>
         <div className="container border-t border-border/50 py-3 lg:hidden">
           <div className="flex items-center gap-2 overflow-x-auto pb-0.5" aria-label="Mobile navigation">
-            <Button variant="outline" size="sm" className="shrink-0 rounded-full" onClick={() => startLogin()}><Menu className="mr-1 h-4 w-4" /> Menu</Button>
+            <Button asChild variant="outline" size="sm" className="shrink-0 rounded-full"><Link href="/sign-in"><Menu className="mr-1 h-4 w-4" /> Menu</Link></Button>
             {navLinks.slice(0, 4).map(link => <Link key={link.href} href={link.href} className="shrink-0 rounded-full border border-border/70 bg-card/70 px-3 py-1.5 text-xs font-medium text-foreground/70">{link.label}</Link>)}
           </div>
         </div>
