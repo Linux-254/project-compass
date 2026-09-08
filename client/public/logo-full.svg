@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 400" role="img" aria-label="ReForge">
+  <g>
+    <circle cx="150" cy="140" r="136" fill="#285C32"/>
+    <circle cx="150" cy="82" r="31" fill="#F4E8BF"/>
+    <path d="M24 270 C92 212 186 204 276 270 Z" fill="#1F5931"/>
+    <path d="M14 270 C114 226 206 220 282 270 Z" fill="#174A2A"/>
+    <path d="M150 274 C142 262 142 250 150 240" fill="none" stroke="#F8F3DF" stroke-width="36" stroke-linecap="round"/>
+    <path d="M150 236 C159 226 159 218 150 214" fill="none" stroke="#F8F3DF" stroke-width="22" stroke-linecap="round"/>
+    <path d="M150 210 L150 184" fill="none" stroke="#F8F3DF" stroke-width="12" stroke-linecap="round"/>
+    <path d="M150 178 C150 148 148 122 150 94" fill="none" stroke="#F8F3DF" stroke-width="12" stroke-linecap="round"/>
+    <path d="M150 142 C130 108 100 82 64 72 C98 86 126 110 150 134 Z" fill="#F8F3DF"/>
+    <path d="M150 168 C172 138 204 116 242 110 C206 122 174 148 150 176 Z" fill="#F8F3DF"/>
+  </g>
+  <text x="330" y="162" font-family="Georgia, 'Cormorant Garamond', serif" font-size="120" font-weight="600" letter-spacing="-2.5" fill="#174A2A">ReForge</text>
+  <text x="332" y="222" font-family="Manrope, Inter, sans-serif" font-size="26" font-weight="500" letter-spacing="5" fill="#56715A">RECOVERY • GROWTH • COMMUNITY</text>
+  <text x="332" y="262" font-family="Manrope, Inter, sans-serif" font-size="19" font-weight="400" letter-spacing="4" fill="#718273">HEAL TODAY. BUILD TOMORROW.</text>
+</svg>

@@ -1,4 +1,4 @@
-import { Loader2, Leaf, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const OAUTH_PENDING_KEY = "reforge-oauth-pending";
@@ -79,11 +79,9 @@ export function OAuthLoadingOverlay() {
       aria-label="Connecting to ReForge"
     >
       <div className="nature-card nature-glass w-full max-w-sm p-8 text-center shadow-2xl shadow-primary/10">
-        <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary/12 text-primary">
-          <span className="relative grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground">
-            <Leaf className="h-5 w-5" />
-            <span className="absolute inset-0 animate-ping rounded-full border border-primary/40" />
-          </span>
+        <div className="relative mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary/12">
+          <img src="/logo-mark.svg" alt="ReForge" className="relative h-14 w-14 rounded-full" />
+          <span className="absolute inset-0 animate-ping rounded-full border border-primary/40" />
         </div>
         <div className="mt-6 flex items-center justify-center gap-2 text-sm font-semibold text-primary">
           <Loader2 className="h-4 w-4 animate-spin" />

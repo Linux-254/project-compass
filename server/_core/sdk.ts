@@ -277,8 +277,12 @@ class SDKServer {
 
     const session = await this.verifySession(sessionToken);
 
+    // DEMO MODE: authentication has been disabled. When there is no valid
+    // session we fall back to an auto-provisioned demo user (elevated to admin)
+    // so every feature — dashboard, journals, goals, admin — is viewable in the
+    // browser without requiring sign-in.
     if (!session) {
-      throw ForbiddenError("Invalid session cookie");
+      return await this.ensureDemoUser();
     }
 
     if (session.openId.startsWith(CRON_OPEN_ID_PREFIX)) {
@@ -321,6 +325,31 @@ class SDKServer {
       lastSignedIn: signedInAt,
     });
 
+    return user;
+  }
+
+  /**
+   * Auto-provision a local demo account used when authentication is disabled.
+   * The demo user is elevated to the `admin` role so protected *and* admin-only
+   * features (e.g. the Admin panel) are all reachable without signing in.
+   */
+  private async ensureDemoUser(): Promise<AuthenticatedUser> {
+    const openId = "local_demo_user";
+    let user = await db.getUserByOpenId(openId);
+    if (!user) {
+      await db.upsertUser({
+        openId,
+        name: "ReForge Demo Browser",
+        email: null,
+        loginMethod: "demo",
+        role: "admin",
+        lastSignedIn: new Date(),
+      });
+      user = await db.getUserByOpenId(openId);
+    }
+    if (!user) {
+      throw ForbiddenError("Demo user unavailable");
+    }
     return user;
   }
 }

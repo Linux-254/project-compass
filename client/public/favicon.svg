@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="ReForge">
+  <rect width="256" height="256" rx="56" fill="#285C32"/>
+  <circle cx="128" cy="64" r="24" fill="#F4E8BF"/>
+  <path d="M16 256 C70 196 132 190 240 256 Z" fill="#1F5931"/>
+  <path d="M8 256 C96 218 188 212 248 256 Z" fill="#174A2A"/>
+  <path d="M128 258 C120 246 120 234 128 226" fill="none" stroke="#F8F3DF" stroke-width="26" stroke-linecap="round"/>
+  <path d="M128 224 C134 218 134 210 128 206" fill="none" stroke="#F8F3DF" stroke-width="16" stroke-linecap="round"/>
+  <path d="M128 204 L128 178" fill="none" stroke="#F8F3DF" stroke-width="10" stroke-linecap="round"/>
+  <path d="M128 172 C128 146 126 122 128 100" fill="none" stroke="#F8F3DF" stroke-width="10" stroke-linecap="round"/>
+  <path d="M128 148 C112 122 90 104 64 98 C88 108 106 128 128 142 Z" fill="#F8F3DF"/>
+  <path d="M128 172 C146 148 166 130 192 126 C168 134 148 154 128 182 Z" fill="#F8F3DF"/>
+</svg>

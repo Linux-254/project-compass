@@ -39,6 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { REFORGE_ASSETS } from "@/config/assets";
 
 const ROLES = ["supporter", "mentor", "moderator", "admin"] as const;
 
@@ -218,7 +219,8 @@ export default function Admin() {
   };
 
   return (
-    <div className="nature-shell min-h-screen pb-16">
+    <div className="nature-shell relative min-h-screen overflow-hidden pb-16">
+      <img src={REFORGE_ASSETS.admin} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.08]" />
       {/* Header */}
       <div className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">

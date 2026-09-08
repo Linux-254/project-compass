@@ -85,9 +85,9 @@ export default function Settings() {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-5xl space-y-7">
-        <section className="relative overflow-hidden rounded-[2rem] border border-border/60 bg-[#304333] text-[#f7eddc]">
+        <section className="relative overflow-hidden rounded-[2rem] border border-border/60 bg-[#285C32] text-[#f7eddc]">
           <img src={REFORGE_ASSETS.settings} alt="Soft light through botanical leaves" className="absolute inset-0 h-full w-full object-cover opacity-35" />
-          <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(39,58,43,.97),rgba(39,58,43,.64),rgba(39,58,43,.16))]" />
+          <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(40,92,50,.97),rgba(40,92,50,.64),rgba(40,92,50,.16))]" />
           <div className="relative max-w-2xl space-y-4 p-7 sm:p-10">
             <Badge className="rounded-full border-white/15 bg-white/10 text-amber-100 hover:bg-white/10">Your private room</Badge>
             <h1 className="font-serif text-4xl leading-tight sm:text-5xl">Set the conditions for a gentler day.</h1>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="ReForge">
+  <rect width="1200" height="630" fill="#F3F5E5"/>
+  <circle cx="620" cy="300" r="430" fill="#E6EBD9" opacity="0.6"/>
+  <path d="M0 470 Q300 380 620 470 T1200 450 L1200 630 L0 630 Z" fill="#A8C0A5" opacity="0.55"/>
+  <path d="M0 530 Q360 450 760 530 T1200 505 L1200 630 L0 630 Z" fill="#3D7045" opacity="0.5"/>
+  <path d="M0 600 Q420 530 820 600 T1200 585 L1200 630 L0 630 Z" fill="#174A2A"/>
+  <g transform="translate(210 320)">
+    <circle r="150" fill="#285C32"/>
+    <circle cy="-62" r="34" fill="#F4E8BF"/>
+    <path d="M-130 150 C-64 84 36 76 120 150 Z" fill="#1F5931"/>
+    <path d="M-138 150 C-30 100 64 94 138 150 Z" fill="#174A2A"/>
+    <path d="M0 156 C-8 144 -8 132 0 122" fill="none" stroke="#F8F3DF" stroke-width="38" stroke-linecap="round"/>
+    <path d="M0 118 C9 108 9 100 0 96" fill="none" stroke="#F8F3DF" stroke-width="24" stroke-linecap="round"/>
+    <path d="M0 92 L0 64" fill="none" stroke="#F8F3DF" stroke-width="12" stroke-linecap="round"/>
+    <path d="M0 58 C0 26 -2 -2 0 -32" fill="none" stroke="#F8F3DF" stroke-width="12" stroke-linecap="round"/>
+    <path d="M0 18 C-22 -18 -54 -46 -94 -58 C-56 -44 -24 -18 0 8 Z" fill="#F8F3DF"/>
+    <path d="M0 48 C24 16 58 -8 98 -16 C60 -2 26 26 0 56 Z" fill="#F8F3DF"/>
+  </g>
+  <text x="430" y="320" font-family="Georgia, serif" font-size="96" font-weight="600" letter-spacing="-1" fill="#174A2A">ReForge</text>
+  <text x="433" y="372" font-family="Manrope, Arial, sans-serif" font-size="26" font-weight="600" letter-spacing="6" fill="#56715A">RECOVERY • GROWTH • COMMUNITY</text>
+  <text x="433" y="414" font-family="Manrope, Arial, sans-serif" font-size="22" font-weight="400" letter-spacing="3" fill="#718273">Return to yourself, one honest day at a time.</text>
+</svg>

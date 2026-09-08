@@ -1,45 +1,40 @@
-import { SiteLayout } from "@/components/site/SiteLayout";
-import { startLogin } from "@/const";
+import { Link } from "wouter";
+import { SitePage } from "@/components/site/SitePage";
 import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/Reveal";
 import { dimensionGroups, dimensions21 } from "@/lib/site-content";
 import { ArrowRight } from "lucide-react";
 
 export default function Dimensions() {
   return (
-    <SiteLayout>
-      <section className="max-w-4xl mx-auto px-4 py-20">
-        <h1 className="text-4xl font-bold text-stone-900 mb-4">
-          The 21 dimensions
-        </h1>
-        <p className="text-xl text-stone-600 mb-12">
-          Recovery is whole-life work. These are the 21 areas ReForge tracks and
-          scores from 0 to 100 — a map you can actually see move.
-        </p>
-
+    <SitePage
+      asset="dimensions"
+      eyebrow="The whole of you"
+      title="The 21 dimensions"
+      description="Recovery is whole-life work. These are the 21 areas ReForge tracks and scores from 0 to 100 — a map you can actually see move."
+    >
+      <section className="container max-w-4xl py-20">
         <div className="space-y-10">
           {dimensionGroups.map(group => (
             <div key={group.group}>
-              <div className="flex items-baseline gap-3 mb-4">
-                <h2 className="text-2xl font-bold text-stone-900">
-                  {group.group}
-                </h2>
-                <p className="text-sm text-stone-500">{group.tone}</p>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
+              <Reveal>
+                <div className="mb-4 flex flex-wrap items-baseline gap-3">
+                  <h2 className="font-serif text-2xl md:text-3xl">{group.group}</h2>
+                  <p className="text-sm nature-muted">{group.tone}</p>
+                </div>
+              </Reveal>
+              <div className="grid gap-4 md:grid-cols-2">
                 {dimensions21
                   .filter(d => d.group === group.group)
                   .map(dimension => (
-                    <div
-                      key={dimension.slug}
-                      className="rounded-2xl border border-stone-200 bg-white p-5"
-                    >
-                      <h3 className="font-semibold text-stone-900 mb-1">
-                        {dimension.label}
-                      </h3>
-                      <p className="text-sm text-stone-600">
-                        {dimension.blurb}
-                      </p>
-                    </div>
+                    <Reveal key={dimension.slug} delay={0.04}>
+                      <div className="nature-card p-5">
+                        <h3 className="text-lg">{dimension.label}</h3>
+                        <p className="mt-1 text-sm leading-6 nature-muted">
+                          {dimension.blurb}
+                        </p>
+                      </div>
+                    </Reveal>
                   ))}
               </div>
             </div>
@@ -47,18 +42,24 @@ export default function Dimensions() {
         </div>
       </section>
 
-      <section className="bg-white border-t border-stone-200 py-16 text-center">
-        <div className="max-w-2xl mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-4">See where you stand today</h2>
-          <p className="text-lg text-stone-600 mb-8">
-            The conversational assessment scores each dimension — no essays, no
-            judgement.
-          </p>
-          <Button size="lg" onClick={() => startLogin()}>
-            Begin the assessment <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+      <section className="border-t border-border/70 bg-primary/4 py-16 text-center">
+        <div className="mx-auto max-w-2xl px-4">
+          <Reveal>
+            <h2 className="font-serif text-3xl md:text-4xl">
+              See where you stand today
+            </h2>
+            <p className="mt-4 text-lg nature-muted">
+              The conversational assessment scores each dimension — no essays, no
+              judgement.
+            </p>
+            <Link href="/dashboard">
+              <Button size="lg" className="mt-7 rounded-full px-7">
+                Begin the assessment <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+          </Reveal>
         </div>
       </section>
-    </SiteLayout>
+    </SitePage>
   );
 }

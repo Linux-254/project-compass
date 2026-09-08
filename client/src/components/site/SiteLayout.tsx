@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
-import { Leaf, Menu, ArrowUpRight } from "lucide-react";
+import { Menu, ArrowUpRight } from "lucide-react";
 
 const navLinks = [
   { href: "/how-it-works", label: "How it works" },
@@ -21,13 +21,11 @@ const footerColumns = [
 export function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground">Skip to content</a>
       <header className="sticky top-0 z-50 border-b border-border/70 bg-background/78 backdrop-blur-xl">
         <div className="container flex h-[4.6rem] items-center justify-between gap-4">
           <Link href="/" className="group flex items-center gap-3" aria-label="ReForge home">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm transition-transform group-hover:-rotate-6">
-              <Leaf className="h-5 w-5" />
-            </span>
-            <span className="font-serif text-2xl font-semibold tracking-tight">Re<span className="text-primary">Forge</span></span>
+            <img src="/logo.svg" alt="ReForge" className="h-10 w-auto transition-transform group-hover:scale-[1.02]" />
           </Link>
           <nav className="hidden items-center gap-6 lg:flex" aria-label="Main navigation">
             {navLinks.map(link => (
@@ -36,19 +34,19 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
           </nav>
           <div className="flex items-center gap-1.5 sm:gap-2">
             <ThemeToggle compact />
-            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex"><Link href="/sign-in">Sign in</Link></Button>
-            <Button asChild size="sm" className="rounded-full px-4"><Link href="/sign-in">Start free <ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>
+            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex"><Link href="/dashboard">Explore the app</Link></Button>
+            <Button asChild size="sm" className="rounded-full px-4"><Link href="/dashboard">Open practice <ArrowUpRight className="ml-1 h-4 w-4" /></Link></Button>
           </div>
         </div>
         <div className="container border-t border-border/50 py-3 lg:hidden">
           <div className="flex items-center gap-2 overflow-x-auto pb-0.5" aria-label="Mobile navigation">
-            <Button asChild variant="outline" size="sm" className="shrink-0 rounded-full"><Link href="/sign-in"><Menu className="mr-1 h-4 w-4" /> Menu</Link></Button>
+            <Button asChild variant="outline" size="sm" className="shrink-0 rounded-full"><Link href="/dashboard"><Menu className="mr-1 h-4 w-4" /> Menu</Link></Button>
             {navLinks.slice(0, 4).map(link => <Link key={link.href} href={link.href} className="shrink-0 rounded-full border border-border/70 bg-card/70 px-3 py-1.5 text-xs font-medium text-foreground/70">{link.label}</Link>)}
           </div>
         </div>
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1">{children}</main>
 
       <footer className="relative overflow-hidden border-t border-border/70 bg-[oklch(0.24_0.045_145)] text-[oklch(0.9_0.03_105)]">
         <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
@@ -56,8 +54,8 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
           <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
             <div>
               <Link href="/" className="flex items-center gap-3 text-white">
-                <span className="grid h-10 w-10 place-items-center rounded-full bg-primary"><Leaf className="h-5 w-5" /></span>
-                <span className="font-serif text-2xl font-semibold">Re<span className="text-[oklch(0.78_0.12_58)]">Forge</span></span>
+                <img src="/logo-mark.svg" alt="" className="h-11 w-11 shrink-0" />
+                <span className="font-serif text-2xl font-semibold">Re<span className="text-[#BBD69F]">Forge</span></span>
               </Link>
               <p className="mt-4 max-w-xs text-sm leading-6 text-white/65">A gentle whole-life recovery companion for the honest work of becoming well again.</p>
             </div>

@@ -1,19 +1,17 @@
-import { SiteLayout } from "@/components/site/SiteLayout";
+import { SitePage } from "@/components/site/SitePage";
 
 export default function Privacy() {
   return (
-    <SiteLayout>
-      <section className="max-w-3xl mx-auto px-4 py-20">
-        <h1 className="text-4xl font-bold text-stone-900 mb-4">Privacy</h1>
-        <p className="text-xl text-stone-600 mb-12">
-          What ReForge stores, what stays yours, and what we never do.
-        </p>
-
-        <div className="space-y-8 text-stone-600 leading-relaxed">
+    <SitePage
+      asset="privacy"
+      eyebrow="Private by design"
+      title="Privacy"
+      description="What ReForge stores, what stays yours, and what we never do."
+    >
+      <section className="container max-w-3xl py-20">
+        <div className="space-y-8 leading-relaxed text-muted-foreground">
           <div>
-            <h2 className="text-xl font-semibold text-stone-900 mb-2">
-              The short version
-            </h2>
+            <h2 className="mb-2 font-serif text-2xl text-foreground">The short version</h2>
             <p>
               Your journal and assessment answers are encrypted at rest.
               Supporters only ever see what you explicitly choose to share. We
@@ -22,9 +20,7 @@ export default function Privacy() {
             </p>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-stone-900 mb-2">
-              What we store
-            </h2>
+            <h2 className="mb-2 font-serif text-2xl text-foreground">What we store</h2>
             <p>
               Your account details (name, email, login method), your profile and
               preferences, your check-ins, journal, goals, rules, dimension
@@ -32,9 +28,7 @@ export default function Privacy() {
             </p>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-stone-900 mb-2">
-              Encryption
-            </h2>
+            <h2 className="mb-2 font-serif text-2xl text-foreground">Encryption</h2>
             <p>
               Tier-1 sensitive content — journal entries and assessment answers
               — is encrypted at rest using AES-256-GCM. Encryption keys are
@@ -42,9 +36,7 @@ export default function Privacy() {
             </p>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-stone-900 mb-2">
-              Your control
-            </h2>
+            <h2 className="mb-2 font-serif text-2xl text-foreground">Your control</h2>
             <p>
               You can delete your account and its data at any time. Supporters
               can be revoked with one tap. Unsubscribing from the newsletter
@@ -52,10 +44,8 @@ export default function Privacy() {
             </p>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-stone-900 mb-2">
-              What we never do
-            </h2>
-            <ul className="list-disc pl-5 space-y-1">
+            <h2 className="mb-2 font-serif text-2xl text-foreground">What we never do</h2>
+            <ul className="list-disc space-y-1 pl-5">
               <li>We never sell or rent personal data.</li>
               <li>
                 We never show journal content to supporters unless you allow it.
@@ -63,12 +53,12 @@ export default function Privacy() {
               <li>We never claim to be a medical service.</li>
             </ul>
           </div>
-          <p className="text-sm text-stone-500">
+          <p className="text-sm text-muted-foreground/70">
             This is a plain-language summary. For full terms, see the Terms
             page.
           </p>
         </div>
       </section>
-    </SiteLayout>
+    </SitePage>
   );
 }

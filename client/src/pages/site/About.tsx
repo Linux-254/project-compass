@@ -1,7 +1,8 @@
-import { SiteLayout } from "@/components/site/SiteLayout";
-import { startLogin } from "@/const";
+import { Link } from "wouter";
+import { SitePage } from "@/components/site/SitePage";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { Reveal } from "@/components/Reveal";
+import { ArrowRight, Leaf } from "lucide-react";
 
 const values = [
   {
@@ -28,35 +29,37 @@ const values = [
 
 export default function About() {
   return (
-    <SiteLayout>
-      <section className="max-w-3xl mx-auto px-4 py-20">
-        <h1 className="text-4xl font-bold text-stone-900 mb-6">
-          Why ReForge exists
-        </h1>
-        <div className="prose prose-stone max-w-none text-stone-600 space-y-4">
-          <p className="text-lg">
+    <SitePage
+      asset="about"
+      eyebrow="Our approach"
+      title="Why ReForge exists"
+      description="A steadily organised friend for the honest work of becoming well again."
+    >
+      <section className="container max-w-3xl py-20">
+        <div className="space-y-5 text-foreground/82">
+          <p className="text-lg leading-8">
             Most programmes end where the hard part begins. You leave with a
             folder of paperwork, a list of triggers, and no plan for a Tuesday
             night when the old voice gets loud.
           </p>
-          <p className="text-lg">
+          <p className="text-lg leading-8">
             ReForge is that plan for Tuesday night — and Wednesday morning, and
             the first weekend, and the wedding where everyone is drinking. It
             was built around one belief:{" "}
-            <span className="text-stone-900 font-medium">
+            <span className="font-medium text-foreground">
               recovery is a whole-life project
             </span>
             , and it deserves a tool that treats the whole life, not just the
             substance.
           </p>
-          <p className="text-lg">
+          <p className="text-lg leading-8">
             The 21 life dimensions — from work and money to faith and self-image
             — give you a map you can actually see move. Daily check-ins keep you
             honest and small. Guides meet you in the specific situation you
             name. And supporters see only what you choose, at the level of
             privacy you choose.
           </p>
-          <p className="text-lg">
+          <p className="text-lg leading-8">
             We are not therapy and we are not medicine. If you are in crisis,
             contact local emergency services or a helpline in your region. What
             we are is a steady, organised friend who happens to be very good at
@@ -65,40 +68,45 @@ export default function About() {
         </div>
       </section>
 
-      <section className="bg-white border-y border-stone-200 py-16">
-        <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            What we believe
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {values.map(value => (
-              <div
-                key={value.title}
-                className="rounded-2xl border border-stone-200 bg-stone-50 p-6"
-              >
-                <h3 className="font-semibold text-stone-900 mb-2">
-                  {value.title}
-                </h3>
-                <p className="text-sm text-stone-600">{value.body}</p>
-              </div>
+      <section className="border-y border-border/70 bg-primary/4 py-16">
+        <div className="container max-w-4xl">
+          <Reveal>
+            <p className="nature-eyebrow text-center">What we believe</p>
+            <h2 className="mt-3 text-center font-serif text-3xl md:text-4xl">
+              The ground we stand on
+            </h2>
+          </Reveal>
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
+            {values.map((value, index) => (
+              <Reveal key={value.title} delay={(index % 2) * 0.06}>
+                <div className="nature-card h-full p-6">
+                  <Leaf className="h-5 w-5 text-primary" />
+                  <h3 className="mt-4 text-xl">{value.title}</h3>
+                  <p className="mt-2 text-sm leading-6 nature-muted">{value.body}</p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-20 text-center">
-        <div className="max-w-2xl mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-4">
-            Your version of the story is waiting
-          </h2>
-          <p className="text-lg text-stone-600 mb-8">
-            It starts with one honest check-in.
-          </p>
-          <Button size="lg" onClick={() => startLogin()}>
-            Start free <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+      <section className="container py-20 text-center">
+        <div className="mx-auto max-w-2xl">
+          <Reveal>
+            <h2 className="font-serif text-3xl md:text-4xl">
+              Your version of the story is waiting
+            </h2>
+            <p className="mt-4 text-lg nature-muted">
+              It starts with one honest check-in.
+            </p>
+            <Link href="/dashboard">
+              <Button size="lg" className="mt-7 rounded-full px-7">
+                Start free <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+          </Reveal>
         </div>
       </section>
-    </SiteLayout>
+    </SitePage>
   );
 }

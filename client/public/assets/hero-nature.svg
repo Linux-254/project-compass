@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9f2e6"/>
+      <stop offset="0.45" stop-color="#d6e6d2"/>
+      <stop offset="0.75" stop-color="#bbd4b9"/>
+      <stop offset="1" stop-color="#9cc0a4"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.7" cy="0.18" r="0.5">
+      <stop offset="0" stop-color="#fffdf4" stop-opacity="0.9"/>
+      <stop offset="0.6" stop-color="#f4e8cf" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#f4e8cf" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hills" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fb294" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#5e8a6a" stop-opacity="0.85"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <rect width="1600" height="1000" fill="url(#sun)"/>
+  <circle cx="1180" cy="180" r="150" fill="#f7f1dd" opacity="0.5"/>
+  <path d="M0 620 Q 300 520 620 600 T 1220 590 T 1600 610 V 1000 H 0 Z" fill="url(#hills)"/>
+  <path d="M0 720 Q 340 640 700 710 T 1600 700 V 1000 H 0 Z" fill="#4f7d5d" opacity="0.8"/>
+  <path d="M0 830 Q 320 770 640 820 T 1200 800 T 1600 820 V 1000 H 0 Z" fill="#3d6a4e" opacity="0.9"/>
+  <rect width="1600" height="1000" fill="url(#sky)" opacity="0"/>
+  <g opacity="0.35">
+    <path d="M260 640 q 34 -70 68 0 q 34 70 -34 58 q 28 24 -34 2" fill="#3c6b4c"/>
+    <path d="M330 610 q 30 -60 60 0 q 30 60 -30 50 q 24 20 -30 2" fill="#4a7a58"/>
+    <path d="M1190 650 q 40 -80 80 0 q 40 80 -40 66 q 32 28 -40 2" fill="#3c6b4c"/>
+    <path d="M1320 620 q 34 -64 68 0 q 34 64 -34 54 q 24 20 -34 2" fill="#4a7a58"/>
+  </g>
+  <rect width="1600" height="1000" fill="#ffffff" opacity="0.03"/>
+</svg>

@@ -3,7 +3,7 @@ import { OAUTH_STATE_COOKIE, encodeOAuthState } from "@shared/const";
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { OAUTH_PENDING_EVENT, OAUTH_PENDING_KEY } from "@/components/OAuthLoadingOverlay";
 
-// Start the Manus OAuth login. Call this from an event handler or effect at the
+// Start the OAuth login. Call this from an event handler or effect at the
 // moment you want to navigate, e.g. `onClick={() => startLogin()}`.
 //
 // It has SIDE EFFECTS — it mints a one-time nonce, writes the __Host- state

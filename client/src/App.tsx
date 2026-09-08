@@ -15,6 +15,7 @@ import Privacy from "@/pages/site/Privacy";
 import Terms from "@/pages/site/Terms";
 import Dashboard from "@/pages/Dashboard";
 import CheckInHistory from "@/pages/CheckInHistory";
+import CheckIn from "@/pages/CheckIn";
 import Devotional from "@/pages/Devotional";
 import Admin from "@/pages/Admin";
 import { RulesPage, NewsletterPage } from "@/pages/AdditionalFeatures";
@@ -23,39 +24,46 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { OAuthLoadingOverlay } from "./components/OAuthLoadingOverlay";
+import { MusicPlayerProvider } from "./lib/MusicPlayer";
+import { MiniPlayer } from "./components/MiniPlayer";
+import { RouterMeta } from "./components/RouterMeta";
 
 function Router() {
   return (
-    <Switch>
-      <Route path={"/"} component={SiteHome} />
-      <Route path={"/about"} component={About} />
-      <Route path={"/how-it-works"} component={HowItWorks} />
-      <Route path={"/dimensions"} component={Dimensions} />
-      <Route path={"/daily-practice"} component={DailyPractice} />
-      <Route path={"/success"} component={Success} />
-      <Route path={"/faq"} component={Faq} />
-      <Route path={"/supporters"} component={Supporters} />
-      <Route path={"/contact"} component={Contact} />
-      <Route path={"/sign-in"} component={SignIn} />
-      <Route path={"/privacy"} component={Privacy} />
-      <Route path={"/terms"} component={Terms} />
-      <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/progress"} component={ProgressPage} />
-      <Route path={"/check-ins"} component={CheckInHistory} />
-      <Route path={"/journal"} component={JournalPage} />
-      <Route path={"/rules"} component={RulesPage} />
-      <Route path={"/goals"} component={GoalsPage} />
-      <Route path={"/guides"} component={GuidesPage} />
-      <Route path={"/music"} component={MusicPage} />
-      <Route path={"/devotional"} component={Devotional} />
-      <Route path={"/newsletter"} component={NewsletterPage} />
-      <Route path={"/settings"} component={SettingsPage} />
-      <Route path={"/admin"} component={Admin} />
-      <Route path={"/onboarding"} component={OnboardingPage} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
+    <>
+      <RouterMeta />
+      <Switch>
+        <Route path={"/"} component={SiteHome} />
+        <Route path={"/about"} component={About} />
+        <Route path={"/how-it-works"} component={HowItWorks} />
+        <Route path={"/dimensions"} component={Dimensions} />
+        <Route path={"/daily-practice"} component={DailyPractice} />
+        <Route path={"/success"} component={Success} />
+        <Route path={"/faq"} component={Faq} />
+        <Route path={"/supporters"} component={Supporters} />
+        <Route path={"/contact"} component={Contact} />
+        <Route path={"/sign-in"} component={SignIn} />
+        <Route path={"/privacy"} component={Privacy} />
+        <Route path={"/terms"} component={Terms} />
+        <Route path={"/dashboard"} component={Dashboard} />
+        <Route path={"/progress"} component={ProgressPage} />
+        <Route path={"/check-ins"} component={CheckInHistory} />
+        <Route path={"/check-in"} component={CheckIn} />
+        <Route path={"/journal"} component={JournalPage} />
+        <Route path={"/rules"} component={RulesPage} />
+        <Route path={"/goals"} component={GoalsPage} />
+        <Route path={"/guides"} component={GuidesPage} />
+        <Route path={"/music"} component={MusicPage} />
+        <Route path={"/devotional"} component={Devotional} />
+        <Route path={"/newsletter"} component={NewsletterPage} />
+        <Route path={"/settings"} component={SettingsPage} />
+        <Route path={"/admin"} component={Admin} />
+        <Route path={"/onboarding"} component={OnboardingPage} />
+        <Route path={"/404"} component={NotFound} />
+        {/* Final fallback route */}
+        <Route component={NotFound} />
+      </Switch>
+    </>
   );
 }
 
@@ -64,9 +72,12 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
-          <Toaster />
-          <OAuthLoadingOverlay />
-          <Router />
+          <MusicPlayerProvider>
+            <Toaster />
+            <OAuthLoadingOverlay />
+            <Router />
+            <MiniPlayer />
+          </MusicPlayerProvider>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

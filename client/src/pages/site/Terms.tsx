@@ -1,19 +1,17 @@
-import { SiteLayout } from "@/components/site/SiteLayout";
+import { SitePage } from "@/components/site/SitePage";
 
 export default function Terms() {
   return (
-    <SiteLayout>
-      <section className="max-w-3xl mx-auto px-4 py-20">
-        <h1 className="text-4xl font-bold text-stone-900 mb-4">Terms of use</h1>
-        <p className="text-xl text-stone-600 mb-12">
-          The plain-language agreement between you and ReForge.
-        </p>
-
-        <div className="space-y-8 text-stone-600 leading-relaxed">
+    <SitePage
+      asset="terms"
+      eyebrow="The plain-language agreement"
+      title="Terms of use"
+      description="The plain-language agreement between you and ReForge."
+    >
+      <section className="container max-w-3xl py-20">
+        <div className="space-y-8 leading-relaxed text-muted-foreground">
           <div>
-            <h2 className="text-xl font-semibold text-stone-900 mb-2">
-              Not a medical service
-            </h2>
+            <h2 className="mb-2 font-serif text-2xl text-foreground">Not a medical service</h2>
             <p>
               ReForge is a lifestyle companion for people changing their
               relationship with substances. It is not therapy, medical advice,
@@ -23,18 +21,14 @@ export default function Terms() {
             </p>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-stone-900 mb-2">
-              Your data is yours
-            </h2>
+            <h2 className="mb-2 font-serif text-2xl text-foreground">Your data is yours</h2>
             <p>
               You own the content you create. You can export or delete it at any
               time. ReForge does not sell your data.
             </p>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-stone-900 mb-2">
-              Using the service
-            </h2>
+            <h2 className="mb-2 font-serif text-2xl text-foreground">Using the service</h2>
             <p>
               Be responsible for your own recovery and decisions. ReForge is a
               support tool, not a guarantee of any outcome. Do not misuse the
@@ -42,9 +36,7 @@ export default function Terms() {
             </p>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-stone-900 mb-2">
-              Account deletion
-            </h2>
+            <h2 className="mb-2 font-serif text-2xl text-foreground">Account deletion</h2>
             <p>
               You may delete your account at any time from the app. Deletion
               removes your personal data from our systems, subject to legal
@@ -52,9 +44,7 @@ export default function Terms() {
             </p>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-stone-900 mb-2">
-              Contact
-            </h2>
+            <h2 className="mb-2 font-serif text-2xl text-foreground">Contact</h2>
             <p>
               Questions about these terms? Use the contact page and we'll
               respond within a couple of days.
@@ -62,6 +52,6 @@ export default function Terms() {
           </div>
         </div>
       </section>
-    </SiteLayout>
+    </SitePage>
   );
 }

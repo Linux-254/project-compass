@@ -27,9 +27,7 @@ import {
   Flame,
   Goal,
   HeartPulse,
-  Home,
   LayoutDashboard,
-  Leaf,
   LogOut,
   Menu,
   Music2,
@@ -46,10 +44,29 @@ import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { REFORGE_ASSETS } from "@/config/assets";
+
+const locationArt: Record<string, string> = {
+  "/dashboard": REFORGE_ASSETS.dashboard,
+  "/check-in": REFORGE_ASSETS.checkIn,
+  "/check-ins": REFORGE_ASSETS.history,
+  "/progress": REFORGE_ASSETS.progress,
+  "/journal": REFORGE_ASSETS.journal,
+  "/goals": REFORGE_ASSETS.goals,
+  "/rules": REFORGE_ASSETS.rules,
+  "/guides": REFORGE_ASSETS.guides,
+  "/music": REFORGE_ASSETS.music,
+  "/devotional": REFORGE_ASSETS.devotional,
+  "/newsletter": REFORGE_ASSETS.newsletter,
+  "/settings": REFORGE_ASSETS.settings,
+  "/onboarding": REFORGE_ASSETS.onboarding,
+  "/admin": REFORGE_ASSETS.admin,
+};
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
-  { icon: HeartPulse, label: "Today", path: "/check-ins" },
+  { icon: HeartPulse, label: "Today", path: "/check-in" },
+  { icon: Flame, label: "History", path: "/check-ins" },
   { icon: TrendingUp, label: "Progress", path: "/progress" },
   { icon: BookOpen, label: "Journal", path: "/journal" },
   { icon: Goal, label: "Goals", path: "/goals" },
@@ -60,6 +77,14 @@ const menuItems = [
   { icon: FileHeart, label: "Newsletter", path: "/newsletter" },
 ];
 
+const mobileNavItems = [
+  { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
+  { icon: HeartPulse, label: "Check in", path: "/check-in" },
+  { icon: TrendingUp, label: "Progress", path: "/progress" },
+  { icon: BookOpen, label: "Journal", path: "/journal" },
+  { icon: Goal, label: "Goals", path: "/goals" },
+];
+
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
 const MIN_WIDTH = 220;
@@ -67,11 +92,17 @@ const MAX_WIDTH = 420;
 
 export function SignInGate() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-5 py-10">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-5 py-10">
+      <img
+        src={REFORGE_ASSETS.dashboard}
+        alt=""
+        aria-hidden
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.07]"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,var(--background)_82%)]" />
+      <div className="relative">
       <div className="nature-card w-full max-w-md p-8 text-center sm:p-10">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/12 text-primary">
-          <Leaf className="h-6 w-6" />
-        </div>
+        <img src="/logo-mark.svg" alt="" className="h-12 w-12" />
         <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
           A private place to begin again
         </p>
@@ -85,6 +116,7 @@ export function SignInGate() {
           Continue privately
         </Button>
         <p className="mt-4 text-xs text-muted-foreground">No judgement. No performance. Just the next honest step.</p>
+      </div>
       </div>
     </div>
   );
@@ -126,6 +158,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: DashboardLayoutCo
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const activeMenuItem = menuItems.find(item => location === item.path);
+  const bgArt = locationArt[location] ?? REFORGE_ASSETS.dashboard;
   const canManagePlatform = user?.role === "admin" || rolesQuery.data?.includes("admin");
 
   useEffect(() => {
@@ -158,6 +191,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: DashboardLayoutCo
 
   return (
     <>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground">Skip to content</a>
       <div className="relative" ref={sidebarRef}>
         <Sidebar collapsible="icon" className="border-r border-sidebar-border/70 bg-sidebar/95" disableTransition={isResizing}>
           <SidebarHeader className="h-[4.75rem] justify-center border-b border-sidebar-border/60">
@@ -167,8 +201,8 @@ function DashboardLayoutContent({ children, setSidebarWidth }: DashboardLayoutCo
               </button>
               {!isCollapsed && (
                 <button onClick={() => setLocation("/dashboard")} className="min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <span className="block font-serif text-xl font-semibold tracking-tight text-sidebar-foreground">Re<span className="text-primary">Forge</span></span>
-                  <span className="block truncate text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/55">Return to yourself</span>
+                  <img src="/logo.svg" alt="ReForge" className="h-11 w-auto max-w-[12.5rem]" />
+                  <span className="mt-1 block truncate text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/55">Return to yourself</span>
                 </button>
               )}
             </div>
@@ -227,18 +261,48 @@ function DashboardLayoutContent({ children, setSidebarWidth }: DashboardLayoutCo
         <div className={`absolute right-0 top-0 h-full w-1 cursor-col-resize transition-colors hover:bg-primary/20 ${isCollapsed ? "hidden" : ""}`} onMouseDown={() => setIsResizing(true)} style={{ zIndex: 50 }} />
       </div>
 
-      <SidebarInset className="min-w-0 bg-background">
+      <SidebarInset className="relative min-w-0 bg-background">
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
+          <img src={bgArt} alt="" className="h-full w-full object-cover opacity-[0.06]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,var(--background)_82%)]" />
+        </div>
         {isMobile && (
           <div className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border/60 bg-background/92 px-3 backdrop-blur">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="h-9 w-9 rounded-xl" />
-              <span className="font-serif text-xl font-semibold">{activeMenuItem?.label ?? "ReForge"}</span>
+              <img src="/logo.svg" alt="ReForge" className="h-6 w-auto" />
             </div>
-            <button onClick={() => setLocation("/dashboard")} className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary" aria-label="Go to overview"><Home className="h-4 w-4" /></button>
+            <span className="truncate px-2 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              {activeMenuItem?.label ?? "Your practice"}
+            </span>
           </div>
         )}
-        <main className="min-h-[calc(100vh-3.5rem)] p-4 sm:p-6 lg:p-8">{children}</main>
+        <main id="main-content" className="relative z-10 min-h-[calc(100vh-3.5rem)] p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 lg:pb-8">{children}</main>
       </SidebarInset>
+
+      {isMobile && (
+        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-background/92 backdrop-blur-xl lg:hidden" aria-label="Primary app navigation">
+          <div className="mx-auto grid max-w-md grid-cols-5">
+            {mobileNavItems.map(item => {
+              const isActive = location === item.path;
+              const ItemIcon = item.icon;
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => setLocation(item.path)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`flex flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  <span className={`flex h-7 w-12 items-center justify-center rounded-full transition-colors ${isActive ? "bg-primary/12" : ""}`}>
+                    <ItemIcon className={`h-5 w-5 ${isActive ? "drop-shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_55%,transparent)]" : ""}`} />
+                  </span>
+                  <span className="leading-none">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      )}
     </>
   );
 }

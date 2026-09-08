@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" role="img" aria-label="ReForge emblem">
+  <circle cx="150" cy="150" r="150" fill="#285C32"/>
+  <circle cx="150" cy="88" r="34" fill="#F4E8BF"/>
+  <path d="M20 300 C96 234 196 226 280 300 Z" fill="#1F5931"/>
+  <path d="M12 300 C120 250 214 244 288 300 Z" fill="#174A2A"/>
+  <path d="M150 306 C142 294 142 282 150 272" fill="none" stroke="#F8F3DF" stroke-width="38" stroke-linecap="round"/>
+  <path d="M150 268 C159 258 159 250 150 246" fill="none" stroke="#F8F3DF" stroke-width="24" stroke-linecap="round"/>
+  <path d="M150 242 L150 214" fill="none" stroke="#F8F3DF" stroke-width="12" stroke-linecap="round"/>
+  <path d="M150 208 C150 176 148 148 150 118" fill="none" stroke="#F8F3DF" stroke-width="12" stroke-linecap="round"/>
+  <path d="M150 168 C128 132 96 104 56 92 C94 106 126 132 150 158 Z" fill="#F8F3DF"/>
+  <path d="M150 198 C174 166 208 142 248 134 C210 148 176 176 150 206 Z" fill="#F8F3DF"/>
+</svg>

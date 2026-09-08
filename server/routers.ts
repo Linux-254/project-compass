@@ -1,4 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
+import { MUSIC_MOODS } from "@shared/music";
+import type { MusicMoodKey } from "@shared/music";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import {
@@ -464,6 +466,28 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         return db.updateMusicProfile(ctx.user.id, input);
+      }),
+
+    library: protectedProcedure.query(async ({ ctx }) => {
+      return db.getMusicLibrary(ctx.user.id);
+    }),
+
+    addTrack: protectedProcedure
+      .input(
+        z.object({
+          title: z.string().trim().min(1).max(80),
+          mood: z.enum(MUSIC_MOODS.map(m => m.key) as [MusicMoodKey, ...MusicMoodKey[]]),
+          url: z.string().trim().url(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return db.addMusicTrack(ctx.user.id, input);
+      }),
+
+    removeTrack: protectedProcedure
+      .input(z.object({ trackId: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        return db.removeMusicTrack(ctx.user.id, input.trackId);
       }),
 
     createPlaylist: protectedProcedure
